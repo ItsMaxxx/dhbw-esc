@@ -20,19 +20,19 @@ Ein Abstimmungsportal für den DHBW-internen Eurovision Cat Contest (ESC-Parodie
 
 Folgende Software muss vor der Installation auf dem System installiert sein:
 
-| Software | Mindestversion | Download |
-|----------|---------------|---------|
-| **Node.js** | 18.x oder höher | https://nodejs.org |
-| **npm** | wird mit Node.js mitgeliefert | – |
-| **Git** | beliebig | https://git-scm.com |
+| Software | Mindestversion | Windows (winget) | macOS (Homebrew) |
+|----------|---------------|-----------------|-----------------|
+| **Node.js** | 18.x oder höher | `winget install OpenJS.NodeJS` | `brew install node` |
+| **npm** | wird mit Node.js mitgeliefert | – | – |
+| **Git** | beliebig | `winget install Git.Git` | `brew install git` |
 
 Außerdem wird ein **Gmail-Konto** mit aktivierter **2-Faktor-Authentifizierung** benötigt, um E-Mail-Verifizierungen versenden zu können (siehe [Umgebungsvariablen](#umgebungsvariablen-env)).
 
 Für den Docker-Betrieb wird zusätzlich benötigt:
 
-| Software | Download |
-|----------|---------|
-| **Docker** | https://www.docker.com |
+| Software | Windows (winget) | macOS (Homebrew) |
+|----------|-----------------|-----------------|
+| **Docker** | `winget install Docker.DockerDesktop` | `brew install --cask docker` |
 
 ---
 
@@ -100,7 +100,7 @@ Beim Start prüft die Anwendung automatisch, ob alle Umgebungsvariablen gesetzt 
 
 ## Docker-Deployment
 
->Wenn Node.js und npm global installiert sind, reicht 'npm start' zum Ausführen der Anwendung. Andernfalls kann die App über Docker betrieben werden – einzige Voraussetzung ist dann https://www.docker.com/products/docker-desktop.
+>Wenn Node.js und npm global installiert sind, reicht 'npm start' zum Ausführen der Anwendung. Andernfalls kann die App über Docker betrieben werden – einzige Voraussetzung ist dann `winget install Docker.DockerDesktop` (Windows) / `brew install --cask docker` (macOS).
 
 ### Image bauen
 

@@ -22,11 +22,12 @@ node_modules/
 npm-debug.log*
 
 # WICHTIG - SQLite Datenbank: Auf keinen Fall Userdaten hochladen!
-model/esc-database.db
-model/esc-database.db-journal
-*.sqlite3
-*.db
-*.db-journal
+# In diesem Fall aber erwünscht, da ich diese explizit teilen möchte.
+# model/esc-database.db
+# model/esc-database.db-journal
+#*.sqlite3
+#*.db
+#*.db-journal
 
 # WICHTIG - Umgebungsvariablen (für Secrets wie das Gmail-App-Passwort)
 .env
