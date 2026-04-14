@@ -1,0 +1,19 @@
+{
+  "name": "dhbw-esc_docker_container",
+  "type": "module",
+  "version": "1.0.0",
+  "description": "dhbw-esc_backend_server for uni project",
+  "main": "controller/app.js",
+  "scripts": {
+    "start": "node controller/app.js"
+  },
+  "dependencies": {
+    "bcrypt": "^6.0.0",
+    "bindings": "1.5.0",
+    "dotenv": "^17.4.2",
+    "express": "^4.18.2",
+    "express-session": "^1.19.0",
+    "nodemailer": "^8.0.5",
+    "sqlite3": "^6.0.1"
+  }
+}

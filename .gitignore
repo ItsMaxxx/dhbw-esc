@@ -1,0 +1,42 @@
+### --- Default ignored files --- ###
+
+
+/shelf/
+/workspace.xml
+# Ignored default folder with query files
+/queries/
+# Datasource local storage ignored files
+/dataSources/
+/dataSources.local.xml
+# Editor-based HTTP Client requests
+/httpRequests/
+
+
+### --- Eigene Ergänzungen für das Projekt --- ###
+
+
+# WICHTIG - enthält tausende Dateien, die jederzeit von npm install automatisch generiert werden
+node_modules/
+
+# WICHTIG - In diesem Log können Systempfade, Versionen der Software oder sogar Umgebungsvariablen stehen
+npm-debug.log*
+
+# WICHTIG - SQLite Datenbank: Auf keinen Fall Userdaten hochladen!
+model/esc-database.db
+model/esc-database.db-journal
+*.sqlite3
+*.db
+*.db-journal
+
+# WICHTIG - Umgebungsvariablen (für Secrets wie das Gmail-App-Passwort)
+.env
+.env.local
+.env.*.local
+
+# Lokale, persönliche Editor-Einstellungen
+.idea/
+.vscode/
+
+# OS-spezifische Dateien
+.DS_Store
+Thumbs.db

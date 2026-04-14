@@ -1,0 +1,48 @@
+/* Important for the Grid-Layout - makes sure that the padding and border of
+the elements gets included in the total width and height of the elements.*/
+* {
+    margin: 0;
+    box-sizing: border-box;
+}
+
+/*Container*/
+.grid-container {
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    /* NEU: Header/Footer nehmen nur so viel Platz wie nötig (auto),
+       der Homepage-Bereich nimmt den restlichen verfügbaren Platz (1fr) */
+    grid-template-rows: auto 1fr auto;
+    min-height: 100vh; /* Beibehalten, um das Layout auf 100% der Bildschirmhöhe zu zwingen */
+}
+
+/*Start Block*/
+.header {
+    grid-column: 1 / span 12;
+    grid-row: 1 / 2; /* Zeile 1 */
+    /*Damit er über dem Inhalt bleibt*/
+    position: sticky;
+    top: 0;
+    z-index: 100; /* Stellt sicher, dass er über dem Inhalt liegt */
+}
+
+/*Start Middle Block*/
+.homepage {
+    grid-column: 1 / span 12;
+    grid-row: 2 / 3; /* NEU: Zeile 2 (die 1fr-Zeile) */
+
+    /* WICHTIG: Das tatsächliche Scrollen des Inhalts aktivieren */
+    overflow-y: auto;
+}
+/*End Middle Block*/
+
+.footer {
+    grid-column: 1 / span 12;
+    grid-row: 3 / 4; /* NEU: Zeile 3 */
+    /* Alte Zeile: grid-row: 16 / span 1; */
+}
+/*End Block*/
+
+/* Teil der Logik für das Ein- und Ausblenden von Pages */
+.hidden {
+    display: none; /* Element ist unsichtbar und nimmt keinen Platz ein */
+}

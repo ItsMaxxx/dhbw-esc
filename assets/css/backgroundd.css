@@ -1,0 +1,29 @@
+/* NUR Background für ALLES */
+body,
+.grid-container,
+.header,
+.homepage,
+footer {
+    background: linear-gradient(
+        135deg,
+        #0a0a1f 0%,
+        #1a0033 30%,
+        #2a1a4d 60%,
+        #0d0a1e 100%
+    ) !important;
+    background-attachment: fixed !important;
+    position: relative;
+}
+
+/* HARTE Multiple Backgrounds erzwingen
+body, .grid-container, .header, .homepage, .footer {
+    background:
+            linear-gradient(135deg, #0a0a1f 0%, #1a0033 30%, #2a1a4d 60%, #0d0a1e 100%) !important,
+            radial-gradient(circle at 15% 85%, #ff4b9a 0%, #ff0077 20%, transparent 50%) !important,
+            radial-gradient(circle at 5% 95%, #ff7bff 0%, #ff4bd2 15%, transparent 45%) !important,
+            radial-gradient(circle at 85% 15%, #35f5ff 0%, #00c0ff 20%, transparent 50%) !important,
+            radial-gradient(circle at 95% 5%, #6a6eff 0%, #3a2bff 15%, transparent 45%) !important !important;
+
+    background-attachment: fixed !important;
+    position: relative !important;
+    }*/

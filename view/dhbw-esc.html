@@ -1,0 +1,125 @@
+<!doctype html>
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <title>DHBW ESC-Voting</title>
+
+        <!-- Sorgt dafür, dass die Browser nichts cachen und immer das Aktuellste vom Server geladen wird-->
+        <meta
+            http-equiv="Cache-Control"
+            content="no-cache, no-store, must-revalidate"
+        />
+        <meta http-equiv="Pragma" content="no-cache" />
+        <meta http-equiv="Expires" content="0" />
+
+        <link rel="stylesheet" href="/assets/css/grid.css" />
+        <link rel="stylesheet" href="/assets/css/dhbw-escc.css" />
+        <link rel="stylesheet" href="/assets/css/backgroundd.css" />
+        <link rel="stylesheet" href="/assets/css/cookie.css" />
+    </head>
+
+    <body>
+        <!--- Start Grid Container --->
+        <div class="grid-container">
+            <!--- Start Header --->
+            <div class="header">
+                <nav class="header-left">
+                    <a href="#" class="nav-link">Explore</a>
+                </nav>
+
+                <div class="header-logo">
+                    <img
+                        src="/assets/images/Eurovision_Cat_Contest_Logo_New.png"
+                        alt="ESC_Cat-Logo"
+                        class="logo-img"
+                    />
+                    <!-- Logo-Datei hinzufügen -->
+                </div>
+
+                <div class="header-right">
+                    <button
+                        class="login-btn"
+                        onclick="window.location.href = '/login'"
+                    >
+                        Login
+                    </button>
+                    <button
+                        class="signup-btn"
+                        onclick="window.location.href = '/signup'"
+                    >
+                        Sign Up
+                    </button>
+                </div>
+            </div>
+            <!--- End Header --->
+
+            <!--- Start Homepage --->
+            <div class="homepage">
+                <section class="get-ready-for-neuostheim">
+                    <p>Main Event</p>
+                </section>
+
+                <section class="latest-news">
+                    <p>Latest News</p>
+                </section>
+
+                <section class="shop">
+                    <p>Shop</p>
+                </section>
+
+                <section class="united-by-cats-picture">
+                    <div class="united-by-cats">
+                        <img
+                            src="/assets/images/United_By_Cats_Picture.png"
+                            alt="United-By-Cats-Picture"
+                            class="united-by-cats-img"
+                        />
+                    </div>
+                </section>
+            </div>
+            <!--- End Homepage --->
+
+            <!--- Start Footer --->
+            <div class="footer">
+                <section class="footer-partners">
+                    <p>Partners</p>
+                </section>
+
+                <div class="footer-content-wrapper">
+                    <div class="footer-section footer-logo">
+                        <img
+                            src="/assets/images/Eurovision_Cat_Contest_Logo_New.png"
+                            alt="United-By-Cats-Picture"
+                            class="footer-logo"
+                        />
+                    </div>
+
+                    <div class="footer-section legal-links">
+                        <h4>Rechtliches & Sicherheit</h4>
+                        <ul>
+                            <li><a href="/impressum">Impressum</a></li>
+                            <li>
+                                <a href="/datenschutz">Datenschutzerklärung</a>
+                            </li>
+                            <li><a href="/cookie-richtlinie">Cookies</a></li>
+                            <li><a href="/agb">AGB</a></li>
+                        </ul>
+                    </div>
+
+                    <div class="footer-section contact-info">
+                        <h4>Contact</h4>
+                        <p>Eurovision Cat Contest</p>
+                        <p>Lucas-Cranach Str. 4</p>
+                        <p>68163 Mannheim</p>
+                        <p>E-Mail: schmelzer2040@gmail.com</p>
+                    </div>
+                </div>
+            </div>
+            <!--- End Footer --->
+        </div>
+        <!--- End Grid Container --->
+
+        <script src="/js/cookie.js"></script>
+        <script src="/js/auth.js"></script>
+    </body>
+</html>

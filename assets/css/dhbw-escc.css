@@ -1,0 +1,47 @@
+/* Header Styles - ESC Design */
+/* Header 3-Spalten Layout für dhbw-esc.css */
+.header {
+    display: flex;
+    width: 100vw;
+    padding: 1rem 0;
+    background: linear-gradient(135deg, #1a0033 0%, #0d0a1e 50%, #000 100%);
+}
+
+.header-left {
+    flex: 1 1 33.33%; /* Links - 1/3 Breite */
+    justify-content: flex-start; /* Inhalte nach LINKS */
+    padding-left: 2rem;
+}
+
+.header-logo {
+    flex: 1 1 33.33%; /* Mitte - 1/3 Breite */
+    display: flex;
+    justify-content: center; /* Logo ZENTRIERT */
+    align-items: center;
+}
+
+.logo-img {
+    height: 80px; /* Logo-Höhe im Header */
+    width: auto; /* Breite proportional */
+    display: block;
+}
+
+.header-right {
+    flex: 1 1 33.33%; /* Rechts - 1/3 Breite */
+    justify-content: flex-end; /* Inhalte nach RECHTS */
+    padding-right: 2rem;
+}
+
+/* Nav-Links bleiben flexibel */
+.header-left {
+    display: flex;
+    gap: 2rem;
+    align-items: center;
+}
+
+/* Buttons flexibel rechts */
+.header-right {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+}

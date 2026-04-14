@@ -1,0 +1,101 @@
+.login-page-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100%;
+}
+
+.login-box {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 15px;
+    padding: 2.5rem;
+    width: 100%;
+    max-width: 400px;
+    color: white;
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+}
+
+.login-box h2 {
+    text-align: center;
+    margin-bottom: 2rem;
+    font-family: sans-serif;
+}
+
+.role-selector {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 1.5rem;
+}
+
+.role-selector input[type="radio"] {
+    display: none; /* Verstecke die Standard-Radiobuttons */
+}
+
+.role-selector label {
+    flex: 1;
+    text-align: center;
+    padding: 0.5rem;
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid #4a3b8c;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.role-selector label:first-of-type {
+    border-radius: 8px 0 0 8px;
+}
+.role-selector label:last-of-type {
+    border-radius: 0 8px 8px 0;
+}
+
+/* Aktiver State für Radio-Buttons */
+.role-selector input[type="radio"]:checked + label {
+    background: #6a4cff;
+    border-color: #8c73ff;
+}
+
+.input-group {
+    margin-bottom: 1.5rem;
+    display: flex;
+    flex-direction: column;
+}
+
+.input-group label {
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+    font-family: sans-serif;
+}
+
+.input-group input {
+    padding: 0.8rem;
+    border-radius: 5px;
+    border: none;
+    background: rgba(255, 255, 255, 0.9);
+    font-size: 1rem;
+    outline: none;
+}
+
+.submit-btn {
+    width: 100%;
+    padding: 1rem;
+    background: linear-gradient(135deg, #6a4cff, #3b1e99);
+    color: white;
+    border: none;
+    border-radius: 5px;
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.submit-btn:hover {
+    transform: scale(1.02);
+}
+
+.error-msg {
+    color: #ff4d4d;
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+    text-align: center;
+}

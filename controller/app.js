@@ -1,0 +1,404 @@
+"use strict";
+
+// Daten aus der .env laden und überprüfen
+import dotenv from "dotenv";
+dotenv.config({ override: true, debug: false, quiet: true, encoding: "utf8" });
+// override -> Die bestehenden Systemvariablen (falls vorhanden) werden immer mit den .env-Werten überschrieben
+// debug -> Gibt bei Fehlern mehr Informationen über die geladenen .env-Variablen aus
+
+import express from "express";
+import path from "path";
+import { fileURLToPath } from "url";
+import session from "express-session";
+import { styleText } from "node:util";
+
+// Importiere die Authentifizierungslogik aus dem Model
+import {
+  authenticateUser,
+  registerViewerUser,
+  verifyUserToken,
+} from "../model/authModel.js";
+
+if (checkAll_ENV()) {
+  throw new Error("Fehlende oder ungültige ENV-Variablen in der .env-Datei.");
+}
+
+const app = express();
+const port = process.env.APP_PORT;
+
+// Middleware, um JSON-Daten aus dem Frontend (POST-Requests) lesen zu können
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// Session-Konfiguration - Weil DSGVO
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET, // In der Praxis ein langes, zufälliges Passwort
+    resave: false, // Session wird nur neu gespeichert, wenn sich die Daten geändert haben
+    saveUninitialized: false, // WICHTIG: Erstellt erst ein Cookie, wenn man explizit Daten (Login) speichert
+    cookie: {
+      httpOnly: true, // Verhindert XSS-Angriffe via JavaScript
+      secure: false, // Bei localhost auf false. Bei echtem HTTPS auf true!
+      // maxAge fehlt absichtlich: Dadurch ist es ein Session-Cookie (löscht sich beim Schließen)
+    },
+  }),
+);
+
+//Ist der Port verfügbar?
+app.listen(port, () => {
+  console.log(styleText("green", `Server ist bereit auf Port ${port}`));
+});
+
+//
+// 1. Zugriff auf statische Dateien (CSS, Bilder, Frontend-JS)
+//
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+app.use("/assets/css", express.static(path.join(__dirname, "../assets/css")));
+app.use(
+  "/assets/images",
+  express.static(path.join(__dirname, "../assets/images")),
+);
+
+// Frontend-JS wird nicht statisch ausgeliefert, sondern über explizite Routen
+const jsFiles = ["auth.js", "cookie.js", "login.js", "signup.js"];
+for (const file of jsFiles) {
+  app.get(`/js/${file}`, (req, res) => {
+    res.sendFile(path.join(__dirname, file));
+  });
+}
+
+//
+// 2. GET-Routen
+//
+
+app.get("/", (req, res) => {
+  logClientInfo(req);
+  res.status(200).sendFile(path.join(__dirname, "../view/dhbw-esc.html"));
+});
+
+app.get("/login", (req, res) => {
+  logClientInfo(req);
+  res.status(200).sendFile(path.join(__dirname, "../view/login.html"));
+});
+
+app.get("/signup", (req, res) => {
+  logClientInfo(req);
+  res.status(200).sendFile(path.join(__dirname, "../view/signup.html"));
+});
+
+app.get("/voting", (req, res) => {
+  logClientInfo(req);
+  res.status(200).sendFile(path.join(__dirname, "../view/voting.html"));
+});
+
+app.get("/impressum", (req, res) => {
+  logClientInfo(req);
+  res
+    .status(200)
+    .sendFile(path.join(__dirname, "../view/rechtliches/impressum.html"));
+});
+
+app.get("/datenschutz", (req, res) => {
+  logClientInfo(req);
+  res
+    .status(200)
+    .sendFile(path.join(__dirname, "../view/rechtliches/datenschutz.html"));
+});
+
+app.get("/cookie-richtlinie", (req, res) => {
+  logClientInfo(req);
+  res
+    .status(200)
+    .sendFile(
+      path.join(__dirname, "../view/rechtliches/cookie-richtlinie.html"),
+    );
+});
+
+app.get("/agb", (req, res) => {
+  logClientInfo(req);
+  res
+    .status(200)
+    .sendFile(path.join(__dirname, "../view/rechtliches/agb.html"));
+});
+
+//
+// 3. API-Endpunkte für Backend-Logik (POST)
+//
+
+// API-Endpunkt, um zu prüfen, ob der User laut Cookie eingeloggt ist
+app.get("/api/check-session", (req, res) => {
+  if (req.session && req.session.user) {
+    res.status(200).json({ loggedIn: true, user: req.session.user });
+  } else {
+    res.status(200).json({ loggedIn: false });
+  }
+});
+
+// API-Endpunkt für Signup
+app.post("/api/signup", async (req, res) => {
+  const {
+    firstName,
+    lastName,
+    email,
+    phonePrefix,
+    phoneNumber,
+    birthDate,
+    gender,
+    countryCode,
+    password,
+    confirmPassword,
+    isOver18,
+    acceptedTerms,
+  } = req.body;
+
+  console.log(
+    styleText("blue", `\nSign-up-Versuch empfangen: E-Mail=${email}`),
+  );
+
+  // Serverseitige Validierung (immer nötig, auch wenn Frontend prüft)
+  if (
+    !firstName ||
+    !lastName ||
+    !email ||
+    !countryCode ||
+    !password ||
+    !confirmPassword
+  ) {
+    console.log(
+      styleText("red", "Registrierung abgelehnt: Pflichtfelder fehlen."),
+    );
+    return res
+      .status(400)
+      .json({ success: false, message: "Bitte alle Pflichtfelder ausfüllen." });
+  }
+
+  if (password !== confirmPassword) {
+    console.log(
+      styleText(
+        "red",
+        "Registrierung abgelehnt: Passwörter stimmen nicht überein.",
+      ),
+    );
+    return res
+      .status(400)
+      .json({ success: false, message: "Passwörter stimmen nicht überein." });
+  }
+
+  const passwordPattern = /^(?=.*[A-Z])(?=.*[!@#$%^&*()\-]).{8,}$/;
+  if (!passwordPattern.test(password)) {
+    console.log(
+      styleText(
+        "red",
+        "Registrierung abgelehnt: Passwort erfüllt die Anforderungen nicht.",
+      ),
+    );
+    return res.status(400).json({
+      success: false,
+      message: "Passwort erfüllt die Anforderungen nicht.",
+    });
+  }
+
+  if (!isOver18 || !acceptedTerms) {
+    console.log(
+      styleText(
+        "red",
+        "Registrierung abgelehnt: 18+ und Nutzungsbedingungen nicht bestätigt.",
+      ),
+    );
+    return res.status(400).json({
+      success: false,
+      message:
+        "Du musst mindestens 18 Jahre alt sein und die Nutzungsbedingungen akzeptieren.",
+    });
+  }
+
+  const userData = {
+    firstName,
+    lastName,
+    email,
+    phonePrefix,
+    phoneNumber,
+    birthDate,
+    gender,
+    countryCode,
+    password,
+    isOver18: isOver18 === "true" || isOver18 === true,
+    acceptedTerms: acceptedTerms === "true" || acceptedTerms === true,
+  };
+
+  const result = await registerViewerUser(userData);
+
+  if (result.success) {
+    console.log(
+      styleText("green", `Registrierung erfolgreich für E-Mail=${email}`),
+    );
+    // Kein automatischer Login -> User soll sich bewusst einloggen
+    return res.status(201).json({ success: true });
+  } else {
+    console.log(
+      styleText("red", `Registrierung fehlgeschlagen: ${result.message}`),
+    );
+    return res.status(400).json(result);
+  }
+});
+
+// API-Endpunkt für die Verifikation beim Signup
+app.get("/api/verify", async (req, res) => {
+  const token = req.query.token;
+
+  if (!token) {
+    return res.status(404).send("Kein Token gefunden.");
+  }
+
+  const result = await verifyUserToken(token);
+
+  if (result.success) {
+    // Leitet den User auf die Login-Seite weiter
+    res.redirect("/login");
+  } else {
+    res
+      .status(400)
+      .send("Der Verifizierungslink ist ungültig oder bereits abgelaufen.");
+  }
+});
+
+// API-Endpunkt für Login
+app.post("/api/login", async (req, res) => {
+  const { role, email, password } = req.body;
+
+  console.log(
+    styleText(
+      "blue",
+      `\nLogin-Versuch empfangen: Rolle = ${role}, E-Mail = ${email}`,
+    ),
+  );
+
+  const result = await authenticateUser(role, email, password);
+
+  if (result.success) {
+    // Sicheres Speichern der Nutzerdaten auf dem Server in der Session
+    req.session.user = {
+      role: result.role,
+      country: result.country || null,
+      firstName: result.firstName || null,
+      lastName: result.lastName || null,
+    };
+    console.log(
+      styleText("green", `Login erfolgreich für: ${req.session.user.country}`),
+    );
+    res.status(200).json({ success: true });
+  } else {
+    console.log(styleText("red", `Login fehlgeschlagen: ${result.message}`));
+    res.status(401).json(result);
+  }
+});
+
+// API-Endpunkt für Logout
+app.post("/api/logout", (req, res) => {
+  // Session-Infos VOR dem Destroy auslesen
+  const sessionId = req.sessionID;
+  const user = req.session && req.session.user;
+
+  if (user) {
+    console.log(
+      styleText(
+        "blue",
+        `Logout angefordert für Session ${sessionId} (Role=${user.role}, Country=${user.country})`,
+      ),
+    );
+  } else {
+    console.log(
+      styleText(
+        "blue",
+        `Logout ohne aktive User-Session angefordert (SessionID=${sessionId})`,
+      ),
+    );
+  }
+
+  req.session.destroy((err) => {
+    if (err) {
+      console.log(
+        styleText(
+          "red",
+          `Fehler beim Zerstören der Session ${sessionId}: ${err.message}`,
+        ),
+      );
+      return res.status(500).json({ success: false });
+    }
+
+    res.clearCookie("connect.sid"); // Session-Cookie beim Client löschen
+    console.log(
+      styleText(
+        "green",
+        `Session ${sessionId} wurde zerstört und User ausgeloggt.`,
+      ),
+    );
+    res.status(200).json({ success: true });
+  });
+});
+
+//
+// 4. Hilfsfunktionen
+//
+
+// Loggt die Client-Informationen (IP, OS, Browser) in der Konsole
+function logClientInfo(req) {
+  let clientIp = req.ip || req.socket.remoteAddress;
+  clientIp = clientIp.replace("::ffff:", ""); // Liest die IP-Adresse des Clients
+  const rawUserAgent = req.headers["user-agent"];
+  const shortDevice = getShortDeviceInfo(rawUserAgent); //Liest den Gerätetyp ("OS: Windows mit Chrome")
+  const route = req.originalUrl; // Liest die aufgerufene URL aus ("/voting")
+
+  console.log(
+    `${styleText("blue", "Aufruf")} ➔ IP: ${clientIp} ➔ OS: ${shortDevice}" ${styleText("blue", "für")} "${route}"`,
+  );
+}
+
+// Liefert den Gerätetyp zurück ("OS: Windows mit Chrome")
+function getShortDeviceInfo(uaString) {
+  if (!uaString) return "Unbekannt";
+  let browser = "Unbekannter Browser";
+  let os = "Unbekanntes OS";
+
+  if (uaString.includes("OPR/") || uaString.includes("Opera"))
+    browser = "Opera";
+  else if (uaString.includes("Edg/")) browser = "Edge";
+  else if (uaString.includes("Chrome/")) browser = "Chrome";
+  else if (uaString.includes("Firefox/")) browser = "Firefox";
+  else if (uaString.includes("Safari/")) browser = "Safari";
+
+  if (uaString.includes("Windows")) os = "Windows";
+  else if (uaString.includes("Mac OS")) os = "macOS";
+  else if (uaString.includes("Android")) os = "Android";
+  else if (uaString.includes("iPhone") || uaString.includes("iPad")) os = "iOS";
+  else if (uaString.includes("Linux")) os = "Linux";
+
+  return `${os} mit ${browser}`;
+}
+
+// Überprüft, ob alle benötigten ENV-Variablen gesetzt sind
+function checkAll_ENV() {
+  const requiredEnvVars = [
+    "APP_PORT",
+    "SESSION_SECRET",
+    "GMAIL_EMAIL",
+    "GMAIL_APP_PASSWORD",
+  ];
+
+  const missingEnvVars = requiredEnvVars.filter((envName) => {
+    const value = process.env[envName];
+    return value === undefined || value === null || value.trim() === "";
+  });
+
+  if (missingEnvVars.length > 0) {
+    console.error(
+      styleText("red", `Fehlende ENV-Variablen: ${missingEnvVars.join(", ")}`),
+    );
+    return true;
+  }
+
+  return false;
+}

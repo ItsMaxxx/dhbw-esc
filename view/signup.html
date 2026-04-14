@@ -1,0 +1,143 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>Sign Up - DHBW ESC</title>
+
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+
+    <link rel="stylesheet" href="/assets/css/grid.css" />
+    <link rel="stylesheet" href="/assets/css/dhbw-escc.css" />
+    <link rel="stylesheet" href="/assets/css/backgroundd.css" />
+    <link rel="stylesheet" href="/assets/css/login.css" />
+    <link rel="stylesheet" href="/assets/css/signup.css" />
+    <link rel="stylesheet" href="/assets/css/cookie.css" />
+</head>
+
+<body>
+<div class="grid-container">
+    <div class="header">
+        <div class="header-logo" style="flex: 1; text-align: center;">
+            <a href="/">
+                <img src="/assets/images/Eurovision_Cat_Contest_Logo_New.png" alt="Logo" class="logo-img" style="cursor:pointer;" />
+            </a>
+        </div>
+    </div>
+
+    <div class="homepage login-page-wrapper">
+        <div class="signup-box">
+            <h2>Create your ESC Account</h2>
+
+            <form id="signupForm">
+                <div class="two-cols">
+                    <div class="input-group">
+                        <label for="firstName">Vorname *</label>
+                        <input type="text" id="firstName" required>
+                    </div>
+                    <div class="input-group">
+                        <label for="lastName">Nachname *</label>
+                        <input type="text" id="lastName" required>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label for="email">E-Mail *</label>
+                    <input type="email" id="email" required>
+                </div>
+
+                <div class="two-cols">
+                    <div class="input-group">
+                        <label for="phonePrefix">Vorwahl</label>
+                        <select id="phonePrefix">
+                            <option value="">Bitte wählen</option>
+                            <option value="+49">+49 (DE)</option>
+                            <option value="+33">+33 (FR)</option>
+                            <option value="+44">+44 (UK)</option>
+                            <option value="+39">+39 (IT)</option>
+                            <option value="+34">+34 (ES)</option>
+                            <!-- weitere Vorwahlen nach Bedarf -->
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label for="phoneNumber">Telefonnummer</label>
+                        <input type="tel" id="phoneNumber">
+                    </div>
+                </div>
+
+                <div class="two-cols">
+                    <div class="input-group">
+                        <label for="birthDate">Geburtsdatum</label>
+                        <input type="date" id="birthDate">
+                    </div>
+                    <div class="input-group">
+                        <label for="gender">Geschlecht</label>
+                        <select id="gender">
+                            <option value="">Keine Angabe</option>
+                            <option value="female">Weiblich</option>
+                            <option value="male">Männlich</option>
+                            <option value="other">Divers</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label for="countryCode">Land oder Gebiet des Wohnsitzes *</label>
+                    <select id="countryCode" required>
+                        <option value="">Bitte wählen</option>
+                        <option value="DE">Deutschland (DE)</option>
+                        <option value="FR">Frankreich (FR)</option>
+                        <option value="IE">Irland (IE)</option>
+                        <option value="ES">Spanien (ES)</option>
+                        <option value="IT">Italien (IT)</option>
+                        <option value="SE">Schweden (SE)</option>
+                        <option value="UK">Vereinigtes Königreich (UK)</option>
+                        <!-- nach Bedarf erweitern -->
+                    </select>
+                </div>
+
+                <div class="two-cols">
+                    <div class="input-group">
+                        <label for="password">Passwort *</label>
+                        <input type="password" id="password" required placeholder="Mind. 8 Zeichen, 1 Großbuchstabe, 1 Sonderzeichen">
+                    </div>
+                    <div class="input-group">
+                        <label for="confirmPassword">Passwort bestätigen *</label>
+                        <input type="password" id="confirmPassword" required>
+                    </div>
+                </div>
+
+                <div class="password-hints">
+                    <p>Das Passwort muss:</p>
+                    <ul>
+                        <li>mindestens 8 Zeichen lang sein</li>
+                        <li>mindestens einen Großbuchstaben enthalten</li>
+                        <li>mindestens ein Sonderzeichen wie !@#$%^&*()- enthalten</li>
+                    </ul>
+                </div>
+
+                <div class="checkbox-group">
+                    <input type="checkbox" id="chkOver18">
+                    <label for="chkOver18">Ich bin mindestens 18 Jahre alt.</label>
+                </div>
+
+                <div class="checkbox-group">
+                    <input type="checkbox" id="chkTerms">
+                    <label for="chkTerms">
+                        Ich habe die <a href="/nutzungsbedingungen" target="_blank">Nutzungsbedingungen</a> gelesen und akzeptiere sie.
+                    </label>
+                </div>
+
+                <p id="signup-error-message" class="error-msg hidden"></p>
+
+                <button type="submit" class="submit-btn">Konto erstellen</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script src="/js/cookie.js"></script>
+<script src="/js/signup.js"></script>
+</body>
+</html>
