@@ -1,24 +1,39 @@
 # DHBW Eurovision Cat Contest – Voting Portal
 
-Ein Abstimmungsportal für den DHBW-internen Eurovision Cat Contest (ESC-Parodie). Viewer können sich registrieren und abstimmen, Jury-Mitglieder haben einen separaten Login.
+Ein vollständiges Abstimmungsportal für den DHBW-internen Eurovision Cat Contest (ESC-Parodie). Viewer können sich registrieren und abstimmen, Jury-Mitglieder haben einen separaten Login, und ein Admin steuert den gesamten Ablauf in Echtzeit.
 
 ---
 
 ## Inhaltsverzeichnis
 
+- [Funktionsübersicht](#funktionsübersicht)
 - [Voraussetzungen](#voraussetzungen)
 - [Installation](#installation)
 - [Umgebungsvariablen (.env)](#umgebungsvariablen-env)
 - [Starten der Anwendung](#starten-der-anwendung)
 - [Docker-Deployment](#docker-deployment)
 - [Projektstruktur](#projektstruktur)
+- [Voting-Ablauf](#voting-ablauf)
 - [Routen & API](#routen--api)
+- [Verwendete Technologien](#verwendete-technologien)
+
+---
+
+## Funktionsübersicht
+
+| Feature | Beschreibung |
+|---------|-------------|
+| **Viewer-Registrierung** | Selbstregistrierung mit E-Mail-Verifizierung und bcrypt-Passwort-Hashing |
+| **Rollen-Login** | Getrennte Logins für Viewer, Jury und Admin |
+| **Viewer-Voting** | Freie Verteilung von bis zu 20 Punkten auf beliebig viele Sänger (kein eigenes Land) |
+| **Jury-Voting** | Klassisches ESC-Schema: einmalige Vergabe von 1–8, 10 und 12 Punkten |
+| **Admin-Steuerung** | Voting starten, Ergebnisse freigeben, Status zurücksetzen, alle Votes löschen |
+| **Echtzeit-Updates** | Server-Sent Events (SSE) – alle Clients werden sofort über Statusänderungen informiert |
+| **Ergebnisberechnung** | Viewer-Rohstimmen werden pro Herkunftsland in ESC-Punkte (12/10/8/…/1) umgerechnet und mit den Jury-Punkten summiert |
 
 ---
 
 ## Voraussetzungen
-
-Folgende Software muss vor der Installation auf dem System installiert sein:
 
 | Software | Mindestversion | Windows (winget) | macOS (Homebrew) |
 |----------|---------------|-----------------|-----------------|
@@ -70,12 +85,10 @@ GMAIL_APP_PASSWORD=<16_zeichen_google_app_passwort>
 |----------|---------|-------------|
 | `APP_PORT` | ja | Port, auf dem der Express-Server lauscht (z. B. `3000`) |
 | `SESSION_SECRET` | ja | Geheimer Schlüssel zum Signieren von Sessions. Muss ein langer, zufälliger String sein (mind. 32 Zeichen). |
-| `GMAIL_EMAIL` | ja | Gmail-Adresse, von der Verifizierungs-E-Mails versendet werden. |
+| `GMAIL_EMAIL` | ja | Gmail-Adresse, von der die Verifizierungs-E-Mails versendet werden. |
 | `GMAIL_APP_PASSWORD` | ja | 16-stelliges Google App-Passwort (kein normales Kontopasswort). |
 
 ### Gmail App-Passwort erstellen
-
-Das Projekt versendet Verifizierungs-E-Mails über Gmail. Dafür wird kein normales Passwort, sondern ein **App-Passwort** benötigt:
 
 1. Google-Konto öffnen → **Sicherheit**
 2. **2-Faktor-Authentifizierung** aktivieren (falls noch nicht geschehen)
@@ -100,7 +113,7 @@ Beim Start prüft die Anwendung automatisch, ob alle Umgebungsvariablen gesetzt 
 
 ## Docker-Deployment
 
->Wenn Node.js und npm global installiert sind, reicht 'npm start' zum Ausführen der Anwendung. Andernfalls kann die App über Docker betrieben werden – einzige Voraussetzung ist dann `winget install Docker.DockerDesktop` (Windows) / `brew install --cask docker` (macOS).
+> Wenn Node.js und npm global installiert sind, reicht `npm start` zum Ausführen der Anwendung. Andernfalls kann die App über Docker betrieben werden – einzige Voraussetzung ist dann eine laufende Docker-Installation.
 
 ### Image bauen
 
@@ -131,29 +144,68 @@ docker run -p 3000:3000 --env-file .env dhbw-esc
 
 ```
 dhbw-esc/
-├── assets/                  # Statische Frontend-Dateien
-│   ├── css/                 # Stylesheets
-│   ├── images/              # Bilder & Logos
-│   └── js/                  # Client-seitiges JavaScript
+├── assets/
+│   ├── css/                     # Stylesheets (pro Seite + globale Stile)
+│   ├── images/
+│   │   ├── flags/               # Flaggen-Icons der teilnehmenden Länder
+│   │   └── *.png                # Logo und weitere Bilder
+│   └── js/                      # Client-seitiges JavaScript (auth, voting, …)
 ├── controller/
-│   └── app.js               # Express-Server (Einstiegspunkt)
+│   └── app.js                   # Express-Server – Routen, Middleware, API-Endpunkte
 ├── model/
-│   ├── authModel.js         # Authentifizierungslogik
-│   ├── database.js          # SQLite-Datenbankabfragen
-│   ├── esc-database.db      # SQLite-Datenbankdatei
-│   ├── mailer.js            # E-Mail-Versand (Nodemailer)
-│   └── voteModel.js         # Abstimmungslogik
-├── view/                    # HTML-Seiten
-│   ├── dhbw-esc.html        # Startseite
-│   ├── login.html           # Login
-│   ├── signup.html          # Registrierung
-│   ├── voting.html          # Abstimmungsseite
-│   ├── results.html         # Ergebnisse
-│   └── rechtliches/         # Impressum, Datenschutz, AGB, Cookie-Richtlinie
-├── .env                     # Umgebungsvariablen (nicht versioniert)
-├── Dockerfile               # Docker-Konfiguration
-└── package.json             # Abhängigkeiten & Skripte
+│   ├── authModel.js             # Registrierung, Login, E-Mail-Verifizierung
+│   ├── database.js              # Alle SQLite-Datenbankabfragen
+│   ├── esc-database.db          # SQLite-Datenbankdatei
+│   ├── mailer.js                # E-Mail-Versand via Nodemailer/Gmail
+│   └── voteModel.js             # Voting-Logik & Ergebnisberechnung
+├── view/
+│   ├── dhbw-esc.html            # Startseite
+│   ├── login.html               # Login (Viewer & Jury)
+│   ├── signup.html              # Registrierung für Viewer
+│   ├── voting.html              # Abstimmungsseite (Viewer, Jury & Ergebnisse)
+│   └── rechtliches/             # Impressum, Datenschutz, AGB, Cookie-Richtlinie
+├── .env                         # Umgebungsvariablen (nicht versioniert)
+├── Dockerfile                   # Docker-Konfiguration
+└── package.json                 # Abhängigkeiten & Skripte
 ```
+
+---
+
+## Voting-Ablauf
+
+### Rollen
+
+| Rolle | Zugang | Funktion |
+|-------|--------|----------|
+| **Viewer** | Selbstregistrierung + E-Mail-Verifizierung | Stimmen frei verteilen |
+| **Jury** | Fester Login in der Datenbank | ESC-Punkte vergeben |
+| **Admin** | Sonderfall des Jury-Logins (`country = "Admin"`) | Voting steuern |
+
+### Ablauf (chronologisch)
+
+1. **Admin startet das Voting** → `POST /api/admin/start-voting`
+   - Alle verbundenen Clients werden per SSE sofort informiert.
+   - Die Voting-Oberfläche wird für Viewer und Jury freigeschaltet.
+
+2. **Viewer geben ihre Stimmen ab** → `POST /api/vote/viewer`
+   - Bis zu **20 Punkte** können frei auf beliebig viele Sänger verteilt werden.
+   - Eine Abstimmung für das eigene Heimatland ist gesperrt.
+   - Wiederholte Abgabe überschreibt die vorherige.
+
+3. **Jury vergibt ihre Punkte** → `POST /api/vote/jury`
+   - Klassisches ESC-Schema: **1, 2, 3, 4, 5, 6, 7, 8, 10, 12** Punkte.
+   - Jeder Punktewert und jeder Sänger darf nur einmal verwendet werden.
+   - Wiederholte Abgabe überschreibt die vorherige.
+
+4. **Admin gibt die Ergebnisse frei** → `POST /api/admin/show-results`
+   - Ab diesem Moment können alle Nutzer die Rangliste einsehen.
+
+### Ergebnisberechnung
+
+Die Gesamtpunktzahl eines Sängers setzt sich zusammen aus:
+
+- **Jury-Punkte:** direkte Summe aller vergebenen ESC-Punkte aller Jury-Länder.
+- **Viewer-Punkte:** Die Rohstimmen werden *pro Herkunftsland* nach Höhe sortiert. Das Land mit den meisten Rohstimmen erhält 12 Punkte, Platz 2 erhält 10, dann 8, 7, 6, 5, 4, 3, 2, 1 – analog zum echten ESC-Telefonvoting.
 
 ---
 
@@ -172,15 +224,37 @@ dhbw-esc/
 | `GET /cookie-richtlinie` | Cookie-Richtlinie |
 | `GET /agb` | Allgemeine Geschäftsbedingungen |
 
-### API-Endpunkte
+### Auth-API
 
 | Methode | Route | Beschreibung |
 |---------|-------|-------------|
 | `GET` | `/api/check-session` | Prüft, ob eine aktive Session vorhanden ist |
 | `POST` | `/api/signup` | Neuen Viewer-Account registrieren |
 | `GET` | `/api/verify?token=<token>` | E-Mail-Adresse verifizieren und Account freischalten |
-| `POST` | `/api/login` | Einloggen (Viewer oder Jury) |
+| `POST` | `/api/login` | Einloggen (Viewer, Jury oder Admin) |
 | `POST` | `/api/logout` | Session beenden und ausloggen |
+
+### Voting-API
+
+| Methode | Route | Beschreibung | Zugriff |
+|---------|-------|-------------|---------|
+| `GET` | `/api/singers` | Alle Sänger inkl. Länderdaten laden | öffentlich |
+| `GET` | `/api/events` | SSE-Stream für Echtzeit-Statusupdates | öffentlich |
+| `GET` | `/api/admin/state` | Aktuellen Voting-Status abfragen | öffentlich |
+| `POST` | `/api/vote/viewer` | Viewer-Stimmen abgeben | Viewer (eingeloggt) |
+| `POST` | `/api/vote/jury` | Jury-Punkte abgeben | Jury (eingeloggt) |
+| `GET` | `/api/results` | Ergebnisse abrufen | Admin immer, sonst nur nach Freigabe |
+
+### Admin-API
+
+Alle Admin-Endpunkte erfordern eine aktive Session mit `role = "admin"`.
+
+| Methode | Route | Beschreibung |
+|---------|-------|-------------|
+| `POST` | `/api/admin/start-voting` | Voting starten (alle Clients per SSE benachrichtigen) |
+| `POST` | `/api/admin/show-results` | Ergebnisse für alle freigeben |
+| `POST` | `/api/admin/reset-state` | Voting-Status zurücksetzen (`votingOpen` + `resultsVisible` → false) |
+| `POST` | `/api/admin/clear-votes` | Alle abgegebenen Stimmen aus der Datenbank löschen |
 
 ---
 
@@ -194,3 +268,4 @@ dhbw-esc/
 | [bcrypt](https://github.com/kelektiv/node.bcrypt.js) | Passwort-Hashing |
 | [nodemailer](https://nodemailer.com) | E-Mail-Versand |
 | [dotenv](https://github.com/motdotla/dotenv) | Umgebungsvariablen |
+| SSE (native) | Echtzeit-Push vom Server an alle Clients |
