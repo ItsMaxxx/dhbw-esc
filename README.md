@@ -73,7 +73,7 @@ Im Projektstamm muss eine Datei namens `.env` angelegt werden. Diese Datei wird 
 Vorlage – Datei `.env` im Projektstamm anlegen:
 
 ```env
-APP_PORT=3000
+APP_PORT=<zu_öffnender_Port>
 SESSION_SECRET=<langer_zufaelliger_string_min_32_zeichen>
 GMAIL_EMAIL=<deine_gmail_adresse@gmail.com>
 GMAIL_APP_PASSWORD=<16_zeichen_google_app_passwort>
@@ -83,7 +83,7 @@ GMAIL_APP_PASSWORD=<16_zeichen_google_app_passwort>
 
 | Variable | Pflicht | Beschreibung |
 |----------|---------|-------------|
-| `APP_PORT` | ja | Port, auf dem der Express-Server lauscht (z. B. `3000`) |
+| `APP_PORT` | ja | Port, auf dem der Express-Server lauscht (Standard ist `3000`) |
 | `SESSION_SECRET` | ja | Geheimer Schlüssel zum Signieren von Sessions. Muss ein langer, zufälliger String sein (mind. 32 Zeichen). |
 | `GMAIL_EMAIL` | ja | Gmail-Adresse, von der die Verifizierungs-E-Mails versendet werden. |
 | `GMAIL_APP_PASSWORD` | ja | 16-stelliges Google App-Passwort (kein normales Kontopasswort). |
@@ -93,9 +93,9 @@ GMAIL_APP_PASSWORD=<16_zeichen_google_app_passwort>
 1. Google-Konto öffnen → **Sicherheit**
 2. **2-Faktor-Authentifizierung** aktivieren (falls noch nicht geschehen)
 3. Unter Sicherheit → **App-Passwörter** → Neue App hinzufügen
-4. Den generierten 16-stelligen Code als `GMAIL_APP_PASSWORD` eintragen
+4. Den generierten 16-stelligen Code als `GMAIL_APP_PASSWORD` ohne Leerzeichen eintragen
 
-> **Achtung:** Die `.env`-Datei enthält sensible Zugangsdaten und darf niemals in ein öffentliches Repository eingecheckt werden.
+> **Achtung:** Die `.env`-Datei enthält sensible Zugangsdaten und darf niemals in ein öffentliches Repository eingecheckt werden. Deshalb wird sie von der .gitignore ignoriert.
 
 ---
 
