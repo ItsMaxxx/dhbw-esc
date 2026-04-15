@@ -1,47 +1,283 @@
-/* Header Styles - ESC Design */
-/* Header 3-Spalten Layout für dhbw-esc.css */
+/* ----- Global Safety Net ----- */
+html,
+body {
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+    max-width: 100%;
+}
+
+/* ----- Header ----- */
 .header {
     display: flex;
-    width: 100vw;
+    align-items: center;
     padding: 1rem 0;
     background: linear-gradient(135deg, #1a0033 0%, #0d0a1e 50%, #000 100%);
 }
 
 .header-left {
-    flex: 1 1 33.33%; /* Links - 1/3 Breite */
-    justify-content: flex-start; /* Inhalte nach LINKS */
+    flex: 1 1 33.33%;
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 2rem;
     padding-left: 2rem;
 }
 
 .header-logo {
-    flex: 1 1 33.33%; /* Mitte - 1/3 Breite */
+    flex: 1 1 33.33%;
     display: flex;
-    justify-content: center; /* Logo ZENTRIERT */
+    justify-content: center;
     align-items: center;
 }
 
 .logo-img {
-    height: 80px; /* Logo-Höhe im Header */
-    width: auto; /* Breite proportional */
+    height: 80px;
+    width: auto;
     display: block;
 }
 
 .header-right {
-    flex: 1 1 33.33%; /* Rechts - 1/3 Breite */
-    justify-content: flex-end; /* Inhalte nach RECHTS */
+    flex: 1 1 33.33%;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 1rem;
     padding-right: 2rem;
 }
 
-/* Nav-Links bleiben flexibel */
-.header-left {
-    display: flex;
-    gap: 2rem;
-    align-items: center;
+/* Navigation-Links (Explore, Voting, ...) */
+.nav-link {
+    color: white;
+    text-decoration: none;
+    font-family: sans-serif;
+    font-size: 1rem;
+    font-weight: bold;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    transition:
+        background 0.2s,
+        color 0.2s;
 }
 
-/* Buttons flexibel rechts */
-.header-right {
+.nav-link:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #cfc2ff;
+}
+
+/* Header-Buttons */
+.login-btn,
+.signup-btn {
+    padding: 0.6rem 1.5rem;
+    font-family: sans-serif;
+    font-size: 1rem;
+    font-weight: bold;
+    border-radius: 6px;
+    cursor: pointer;
+    transition:
+        transform 0.2s,
+        box-shadow 0.2s;
+}
+
+.login-btn {
+    background: linear-gradient(135deg, #6a4cff, #3b1e99);
+    color: white;
+    border: none;
+}
+
+.signup-btn {
+    background: transparent;
+    color: white;
+    border: 2px solid #6a4cff;
+}
+
+.login-btn:hover,
+.signup-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(106, 76, 255, 0.4);
+}
+
+/* ----- Homepage Layout ----- */
+.homepage {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+    padding: 2rem;
+    color: white;
+    font-family: sans-serif;
+}
+
+/* Card-Sektionen: Main Event, Latest News, Shop */
+.homepage .get-ready-for-neuostheim,
+.homepage .latest-news,
+.homepage .shop {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 14px;
+    padding: 2.5rem 2rem;
+    min-height: 220px;
     display: flex;
-    gap: 1rem;
     align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(6px);
+    transition:
+        transform 0.25s ease,
+        border-color 0.25s ease,
+        box-shadow 0.25s ease;
+    cursor: pointer;
+}
+
+.homepage .get-ready-for-neuostheim:hover,
+.homepage .latest-news:hover,
+.homepage .shop:hover {
+    transform: translateY(-4px);
+    border-color: #8c73ff;
+    box-shadow: 0 10px 30px rgba(106, 76, 255, 0.25);
+}
+
+.homepage .get-ready-for-neuostheim p,
+.homepage .latest-news p,
+.homepage .shop p {
+    margin: 0;
+    font-size: 1.4rem;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #fff;
+}
+
+/* ----- Hero: United By Cats (spannt volle Breite) ----- */
+.united-by-cats-picture {
+    grid-column: 1 / -1;
+    margin: 0 -2rem -2rem;
+    padding: 0;
+    display: block;
+    overflow: hidden;
+    background: linear-gradient(
+        180deg,
+        rgba(106, 76, 255, 0) 0%,
+        rgba(106, 76, 255, 0.08) 100%
+    );
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.united-by-cats {
+    width: 100%;
+    display: block;
+}
+
+.united-by-cats-img {
+    display: block;
+    width: 100%;
+    height: auto;
+}
+
+/* ----- Responsive ----- */
+@media (max-width: 900px) {
+    .homepage {
+        grid-template-columns: 1fr;
+    }
+
+    .header-left,
+    .header-right {
+        padding-left: 1rem;
+        padding-right: 1rem;
+        gap: 1rem;
+    }
+
+    .logo-img {
+        height: 60px;
+    }
+}
+
+/* ----- Footer ----- */
+.footer {
+    color: white;
+    font-family: sans-serif;
+    background: linear-gradient(135deg, #1a0033 0%, #0d0a1e 50%, #000 100%);
+    padding: 2rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.footer-partners {
+    text-align: center;
+    padding: 0 0 1.25rem 0;
+    margin-bottom: 1.5rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.footer-partners p {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: bold;
+    color: #cfc2ff;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.footer-content-wrapper {
+    display: grid;
+    grid-template-columns: 1fr 2fr 1fr;
+    gap: 2rem;
+    align-items: center;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.footer-section h4 {
+    margin: 0 0 0.75rem 0;
+    color: #cfc2ff;
+    font-size: 0.95rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.footer-section ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.footer-section ul li {
+    margin-bottom: 0.4rem;
+}
+
+.footer-section a {
+    color: #cfc2ff;
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+.footer-section a:hover {
+    color: #8c73ff;
+}
+
+.footer-section.contact-info p {
+    margin: 0 0 0.25rem 0;
+    color: #cfc2ff;
+    font-size: 0.9rem;
+}
+
+/* Footer-Logo: das Kind-<img> fix aufs richtige Maß bringen */
+.footer-section.footer-logo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.footer-section.footer-logo img {
+    height: 110px;
+    width: auto;
+    display: block;
+}
+
+@media (max-width: 900px) {
+    .footer-content-wrapper {
+        grid-template-columns: 1fr;
+        text-align: center;
+    }
+
+    .footer-section.footer-logo img {
+        height: 80px;
+    }
 }

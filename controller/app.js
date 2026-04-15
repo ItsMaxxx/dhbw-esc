@@ -19,6 +19,29 @@ import {
   verifyUserToken,
 } from "../model/authModel.js";
 
+// Importiere die Voting-Logik aus dem Model
+import {
+  fetchAllSingers,
+  submitViewerVotes,
+  submitJuryVotes,
+  calculateResults,
+  clearAllVotes,
+} from "../model/voteModel.js";
+
+// In-Memory Voting-Status (bleibt bis Server-Neustart erhalten)
+const votingState = { votingOpen: false, resultsVisible: false };
+
+// SSE-Clients: alle verbundenen Browser-Verbindungen
+const sseClients = new Set();
+
+// Sendet ein Event an alle verbundenen Clients
+function broadcast(event, data) {
+  const msg = `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
+  for (const res of sseClients) {
+    res.write(msg);
+  }
+}
+
 if (checkAll_ENV()) {
   throw new Error("Fehlende oder ungültige ENV-Variablen in der .env-Datei.");
 }
@@ -63,7 +86,7 @@ app.use(
 );
 
 // Frontend-JS wird nicht statisch ausgeliefert, sondern über explizite Routen
-const jsFiles = ["auth.js", "cookie.js", "login.js", "signup.js"];
+const jsFiles = ["auth.js", "cookie.js", "login.js", "signup.js", "voting.js"];
 for (const file of jsFiles) {
   app.get(`/js/${file}`, (req, res) => {
     res.sendFile(path.join(__dirname, file));
@@ -282,6 +305,7 @@ app.post("/api/login", async (req, res) => {
     // Sicheres Speichern der Nutzerdaten auf dem Server in der Session
     req.session.user = {
       role: result.role,
+      id: result.id || null,
       country: result.country || null,
       firstName: result.firstName || null,
       lastName: result.lastName || null,
@@ -338,6 +362,155 @@ app.post("/api/logout", (req, res) => {
     );
     res.status(200).json({ success: true });
   });
+});
+
+// API-Endpunkt: Alle Sänger für Voting-/Results-Liste
+app.get("/api/singers", async (req, res) => {
+  try {
+    const singers = await fetchAllSingers();
+    res.status(200).json(singers);
+  } catch (err) {
+    console.error(styleText("red", "Fehler beim Laden der Sänger: " + err.message));
+    res.status(500).json({ success: false, message: "Sänger konnten nicht geladen werden." });
+  }
+});
+
+// API-Endpunkt: Voting-Status abfragen (öffentlich)
+app.get("/api/admin/state", (req, res) => {
+  res.status(200).json({ votingOpen: votingState.votingOpen, resultsVisible: votingState.resultsVisible });
+});
+
+// SSE-Endpunkt: Echtzeit-Updates für alle verbundenen Clients
+app.get("/api/events", (req, res) => {
+  res.setHeader("Content-Type", "text/event-stream");
+  res.setHeader("Cache-Control", "no-cache");
+  res.setHeader("Connection", "keep-alive");
+  res.flushHeaders();
+
+  // Aktuellen State sofort beim Verbinden senden
+  res.write(`event: state\ndata: ${JSON.stringify(votingState)}\n\n`);
+
+  sseClients.add(res);
+
+  // Heartbeat alle 25s, damit die Verbindung nicht abbricht
+  const heartbeat = setInterval(() => {
+    res.write(": heartbeat\n\n");
+  }, 25000);
+
+  req.on("close", () => {
+    clearInterval(heartbeat);
+    sseClients.delete(res);
+  });
+});
+
+// Admin-Middleware
+function requireAdmin(req, res, next) {
+  const user = req.session && req.session.user;
+  if (!user || user.role !== "admin") {
+    return res.status(403).json({ success: false, message: "Kein Zugriff." });
+  }
+  next();
+}
+
+// API-Endpunkt: Voting starten
+app.post("/api/admin/start-voting", requireAdmin, (req, res) => {
+  votingState.votingOpen = true;
+  console.log(styleText("green", "Admin: Voting wurde gestartet."));
+  broadcast("state", votingState);
+  res.status(200).json({ success: true });
+});
+
+// API-Endpunkt: Ergebnisse freigeben
+app.post("/api/admin/show-results", requireAdmin, (req, res) => {
+  votingState.resultsVisible = true;
+  console.log(styleText("green", "Admin: Ergebnisse wurden freigegeben."));
+  broadcast("state", votingState);
+  res.status(200).json({ success: true });
+});
+
+// API-Endpunkt: Voting-Status zurücksetzen (votingOpen + resultsVisible → false)
+app.post("/api/admin/reset-state", requireAdmin, (req, res) => {
+  votingState.votingOpen = false;
+  votingState.resultsVisible = false;
+  console.log(styleText("green", "Admin: Voting-Status wurde zurückgesetzt."));
+  broadcast("state", votingState);
+  res.status(200).json({ success: true });
+});
+
+// API-Endpunkt: Alle Votes löschen
+app.post("/api/admin/clear-votes", requireAdmin, async (req, res) => {
+  const result = await clearAllVotes();
+  if (result.success) {
+    console.log(styleText("green", "Admin: Alle Votes wurden gelöscht."));
+    res.status(200).json({ success: true });
+  } else {
+    res.status(500).json(result);
+  }
+});
+
+// API-Endpunkt: Viewer-Stimmen speichern
+app.post("/api/vote/viewer", async (req, res) => {
+  const user = req.session && req.session.user;
+  if (!user) {
+    return res.status(401).json({ success: false, message: "Bitte einloggen." });
+  }
+  if (user.role !== "viewer") {
+    return res.status(403).json({ success: false, message: "Nur Zuschauer dürfen hier abstimmen." });
+  }
+  if (!votingState.votingOpen) {
+    return res.status(403).json({ success: false, message: "Das Voting hat noch nicht begonnen!" });
+  }
+  if (!user.id) {
+    return res.status(400).json({ success: false, message: "Session ohne User-ID, bitte neu einloggen." });
+  }
+
+  const { votes } = req.body || {};
+  const result = await submitViewerVotes(user.id, user.country, votes);
+  if (result.success) {
+    broadcast("votes", {});
+    res.status(200).json(result);
+  } else {
+    res.status(400).json(result);
+  }
+});
+
+// API-Endpunkt: Jury-Stimmen speichern
+app.post("/api/vote/jury", async (req, res) => {
+  const user = req.session && req.session.user;
+  if (!user) {
+    return res.status(401).json({ success: false, message: "Bitte einloggen." });
+  }
+  if (user.role !== "jury") {
+    return res.status(403).json({ success: false, message: "Nur Jury-Mitglieder dürfen hier abstimmen." });
+  }
+  if (!votingState.votingOpen) {
+    return res.status(403).json({ success: false, message: "Das Voting hat noch nicht begonnen!" });
+  }
+
+  const { votes } = req.body || {};
+  const result = await submitJuryVotes(user.country, votes);
+  if (result.success) {
+    broadcast("votes", {});
+    res.status(200).json(result);
+  } else {
+    res.status(400).json(result);
+  }
+});
+
+// API-Endpunkt: Ergebnisse (Jury + Viewer-Punkte pro Sänger)
+app.get("/api/results", async (req, res) => {
+  const user = req.session && req.session.user;
+  const isAdmin = user && user.role === "admin";
+  if (!votingState.resultsVisible && !isAdmin) {
+    return res.status(403).json({ success: false, message: "Die Ergebnisse wurden noch nicht freigegeben." });
+  }
+  try {
+    const results = await calculateResults();
+    res.status(200).json(results);
+  } catch (err) {
+    console.error(styleText("red", "Fehler beim Berechnen der Ergebnisse: " + err.message));
+    res.status(500).json({ success: false, message: "Ergebnisse konnten nicht berechnet werden." });
+  }
 });
 
 //

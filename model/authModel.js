@@ -10,7 +10,10 @@ export const authenticateUser = async (role, email, password) => {
         if (role === "jury") {
             // Jury bleibt vorerst Klartext
             const user = await getJuryUser(email, password);
-            if (user) return { success: true, role: "jury", country: user.country };
+            if (user) {
+                const isAdmin = user.country === "Admin";
+                return { success: true, role: isAdmin ? "admin" : "jury", country: user.country };
+            }
             return { success: false, message: "E-Mail oder Passwort falsch" };
 
         } else if (role === "viewer") {
@@ -29,7 +32,7 @@ export const authenticateUser = async (role, email, password) => {
             if (passwordMatch) {
                 console.log(styleText("green", `Viewer-Login erfolgreich: ${viewer.email}`));
                 return {
-                    success: true, role: "viewer", country: viewer.country_code,
+                    success: true, role: "viewer", id: viewer.id, country: viewer.country_code,
                     firstName: viewer.first_name, lastName: viewer.last_name
                 };
             } else {

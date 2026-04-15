@@ -11,7 +11,9 @@ document.addEventListener("DOMContentLoaded", async () => {
       let displayText;
 
       //Logik für was im Header angezeigt werden soll
-      if (user.role === "jury") {
+      if (user.role === "admin") {
+        displayText = "Admin";
+      } else if (user.role === "jury") {
         displayText = user.country || "Jury";
       } else if (user.role === "viewer") {
         displayText = user.firstName || "Viewer";

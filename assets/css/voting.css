@@ -1,0 +1,338 @@
+.voting-page {
+    display: block;
+    padding: 2rem;
+    color: white;
+    font-family: sans-serif;
+}
+
+.voting-page h2 {
+    margin-bottom: 1rem;
+}
+
+.voting-info {
+    color: #cfc2ff;
+    margin-bottom: 1rem;
+}
+
+/* ----- Tabs ----- */
+.tab-bar {
+    display: flex;
+    margin-bottom: 2rem;
+    border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+.tab-btn {
+    padding: 0.9rem 2rem;
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid #4a3b8c;
+    border-bottom: none;
+    color: white;
+    cursor: pointer;
+    font-size: 1.1rem;
+    font-family: sans-serif;
+    transition: all 0.2s;
+}
+
+.tab-btn:first-child {
+    border-radius: 8px 0 0 0;
+}
+.tab-btn:last-child {
+    border-radius: 0 8px 0 0;
+}
+
+.tab-btn.active {
+    background: #6a4cff;
+    border-color: #8c73ff;
+}
+
+.tab-content.hidden {
+    display: none;
+}
+
+/* ----- Voting-Header + Counter ----- */
+.voting-header {
+    margin-bottom: 1.5rem;
+}
+
+.voting-header h2 {
+    margin-bottom: 0.5rem;
+}
+
+.vote-counter {
+    font-size: 1.3rem;
+    font-weight: bold;
+    margin-top: 0.75rem;
+}
+
+.vote-counter.over {
+    color: #ff4d4d;
+}
+
+/* ----- Sänger-Liste ----- */
+.singer-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.singer-row {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.75rem 1rem;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 8px;
+}
+
+.singer-row.disabled {
+    opacity: 0.55;
+}
+
+.flag {
+    width: 44px;
+    height: 30px;
+    object-fit: cover;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.15);
+    flex-shrink: 0;
+}
+
+.flag-placeholder {
+    display: inline-block;
+}
+
+.landcode {
+    width: 48px;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.singer-name {
+    flex: 1 1 25%;
+    font-weight: bold;
+}
+
+.song-name {
+    flex: 1 1 25%;
+    font-style: italic;
+    color: #cfc2ff;
+}
+
+/* ----- Vote-Controls (Viewer) ----- */
+.vote-controls {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-left: auto;
+}
+
+.vote-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: #3b1e99;
+    color: white;
+    border: none;
+    font-size: 1.3rem;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.vote-btn:hover {
+    background: #6a4cff;
+}
+
+.vote-input {
+    width: 60px;
+    height: 36px;
+    text-align: center;
+    border-radius: 5px;
+    border: none;
+    font-size: 1.1rem;
+    background: rgba(255, 255, 255, 0.9);
+    color: #1a0033;
+    font-weight: bold;
+}
+
+/* Chrome/Edge: Spinner entfernen */
+.vote-input::-webkit-outer-spin-button,
+.vote-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+.vote-input[type="number"] {
+    -moz-appearance: textfield;
+}
+
+/* ----- Jury-Select ----- */
+.jury-select {
+    padding: 0.5rem 0.75rem;
+    border-radius: 5px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    background: rgba(255, 255, 255, 0.92);
+    color: #1a0033;
+    font-size: 1rem;
+    font-weight: bold;
+    min-width: 70px;
+}
+
+.jury-select.duplicate {
+    border-color: #ff4d4d;
+    box-shadow: 0 0 0 2px #ff4d4d;
+}
+
+.own-country {
+    font-style: italic;
+    color: #cfc2ff;
+    padding: 0 0.5rem;
+}
+
+/* ----- Submit ----- */
+.submit-wrapper {
+    margin-top: 2rem;
+    text-align: center;
+}
+
+.submit-wrapper .submit-btn {
+    padding: 0.9rem 2.5rem;
+    background: linear-gradient(135deg, #6a4cff, #3b1e99);
+    color: white;
+    border: none;
+    border-radius: 5px;
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.submit-wrapper .submit-btn:hover:not(:disabled) {
+    transform: scale(1.02);
+}
+
+.submit-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* ----- Meldungen ----- */
+.error-msg {
+    color: #ff4d4d;
+    font-size: 0.95rem;
+    margin-bottom: 0.75rem;
+    text-align: center;
+}
+
+.success-msg {
+    color: #69e06a;
+    font-size: 0.95rem;
+    margin-bottom: 0.75rem;
+    text-align: center;
+}
+
+.info-msg {
+    padding: 1rem;
+    background: rgba(0, 0, 0, 0.4);
+    border-radius: 8px;
+    margin-bottom: 1rem;
+}
+
+.info-msg a {
+    color: #8c73ff;
+    text-decoration: underline;
+}
+
+.loading {
+    padding: 1rem;
+    text-align: center;
+    color: #cfc2ff;
+    font-style: italic;
+}
+
+/* ----- Warning-Message ----- */
+.info-msg.warning {
+    border-left: 4px solid #f59e0b;
+    background: rgba(245, 158, 11, 0.12);
+    color: #fcd34d;
+}
+
+/* ----- Admin-Panel ----- */
+.admin-controls {
+    max-width: 560px;
+}
+
+.admin-btn-group {
+    margin-bottom: 2rem;
+}
+
+.admin-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    width: 100%;
+    max-width: 420px;
+    padding: 0.9rem 1.5rem;
+    border: none;
+    border-radius: 8px;
+    font-size: 1.05rem;
+    font-family: sans-serif;
+    font-weight: bold;
+    color: white;
+    cursor: pointer;
+    transition: transform 0.2s, opacity 0.2s;
+}
+
+.admin-btn:hover {
+    transform: scale(1.02);
+}
+
+.admin-btn.start  { background: linear-gradient(135deg, #22c55e, #15803d); }
+.admin-btn.show   { background: linear-gradient(135deg, #6a4cff, #3b1e99); }
+.admin-btn.danger { background: linear-gradient(135deg, #ef4444, #991b1b); }
+.admin-btn.reset  { background: linear-gradient(135deg, #f59e0b, #b45309); }
+
+.admin-info {
+    margin-top: 0.5rem;
+    font-size: 0.9rem;
+    color: #cfc2ff;
+    min-height: 1.2em;
+}
+
+.admin-info.success { color: #69e06a; }
+.admin-info.error   { color: #ff4d4d; }
+
+.admin-state-badge {
+    display: inline-block;
+    padding: 0.15rem 0.55rem;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    font-weight: bold;
+    margin-left: auto;
+}
+
+.admin-state-badge.on  { background: rgba(34,197,94,0.25); color: #86efac; }
+.admin-state-badge.off { background: rgba(255,255,255,0.12); color: #aaa; }
+
+/* ----- Results-Liste ----- */
+.points-col {
+    width: 80px;
+    text-align: center;
+    font-size: 1.1rem;
+    font-weight: bold;
+}
+
+.points-col .label {
+    display: block;
+    font-size: 0.75rem;
+    color: #aaa;
+    font-weight: normal;
+    margin-bottom: 0.15rem;
+}
+
+.points-col.total {
+    font-size: 1.25rem;
+    color: #ffd966;
+}
