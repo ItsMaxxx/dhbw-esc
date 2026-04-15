@@ -1,0 +1,191 @@
+<!doctype html>
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <title>Voting - DHBW ESC</title>
+
+        <meta
+            http-equiv="Cache-Control"
+            content="no-cache, no-store, must-revalidate"
+        />
+        <meta http-equiv="Pragma" content="no-cache" />
+        <meta http-equiv="Expires" content="0" />
+
+        <link rel="stylesheet" href="/assets/css/grid.css" />
+        <link rel="stylesheet" href="/assets/css/dhbw-escc.css" />
+        <link rel="stylesheet" href="/assets/css/backgroundd.css" />
+        <link rel="stylesheet" href="/assets/css/cookie.css" />
+        <link rel="stylesheet" href="/assets/css/voting.css" />
+    </head>
+
+    <body>
+        <div class="grid-container">
+            <!--- Start Header --->
+            <div class="header">
+                <nav class="header-left">
+                    <a href="/" class="nav-link">Home</a>
+                </nav>
+
+                <div class="header-logo">
+                    <a href="/">
+                        <img
+                            src="/assets/images/Eurovision_Cat_Contest_Logo_New.png"
+                            alt="ESC_Cat-Logo"
+                            class="logo-img"
+                        />
+                    </a>
+                </div>
+
+                <div class="header-right">
+                    <button
+                        class="login-btn"
+                        onclick="window.location.href = '/login'"
+                    >
+                        Login
+                    </button>
+                    <button
+                        class="signup-btn"
+                        onclick="window.location.href = '/signup'"
+                    >
+                        Sign Up
+                    </button>
+                </div>
+            </div>
+            <!--- End Header --->
+
+            <!--- Start Voting Page --->
+            <div class="homepage voting-page">
+                <div class="tab-bar">
+                    <button class="tab-btn active" data-tab="voting">
+                        Voting
+                    </button>
+                    <button class="tab-btn" data-tab="results">
+                        Results
+                    </button>
+                    <button class="tab-btn hidden" id="tab-btn-admin" data-tab="admin">
+                        Voting-Befehle
+                    </button>
+                </div>
+
+                <!--- Tab: Voting --->
+                <section id="tab-voting" class="tab-content active">
+                    <div id="login-required" class="info-msg hidden">
+                        Bitte <a href="/login">einloggen</a>, um abstimmen zu können.
+                    </div>
+
+                    <div id="voting-header" class="voting-header hidden">
+                        <h2 id="voting-title">Deine Stimmen</h2>
+                        <p id="voting-info"></p>
+                        <p class="vote-counter">
+                            Verteilt:
+                            <span id="vote-counter-value">0</span>
+                            /
+                            <span id="vote-counter-max">20</span>
+                        </p>
+                    </div>
+
+                    <ul id="singer-list" class="singer-list">
+                        <li class="loading">Lade Sänger…</li>
+                    </ul>
+
+                    <div id="submit-wrapper" class="submit-wrapper hidden">
+                        <p id="vote-error" class="error-msg hidden"></p>
+                        <p id="vote-success" class="success-msg hidden"></p>
+                        <button id="submit-votes" class="submit-btn" disabled>
+                            Stimmen abgeben
+                        </button>
+                    </div>
+                </section>
+
+                <!--- Tab: Admin --->
+                <section id="tab-admin" class="tab-content hidden">
+                    <div class="admin-controls">
+                        <h2>Voting-Befehle</h2>
+
+                        <div class="admin-btn-group">
+                            <button id="btn-start-voting" class="admin-btn start">
+                                Start Voting Process
+                                <span id="badge-voting" class="admin-state-badge off">gestoppt</span>
+                            </button>
+                            <p id="admin-start-info" class="admin-info"></p>
+                        </div>
+
+                        <div class="admin-btn-group">
+                            <button id="btn-show-results" class="admin-btn show">
+                                Publish Voting Results
+                                <span id="badge-results" class="admin-state-badge off">gesperrt</span>
+                            </button>
+                            <p id="admin-show-info" class="admin-info"></p>
+                        </div>
+
+                        <div class="admin-btn-group">
+                            <button id="btn-reset-state" class="admin-btn reset">
+                                Unpublish Voting &amp; Results
+                                <span id="badge-reset" class="admin-state-badge off">inaktiv</span>
+                            </button>
+                            <p id="admin-reset-info" class="admin-info"></p>
+                        </div>
+
+                        <div class="admin-btn-group">
+                            <button id="btn-clear-votes" class="admin-btn danger">
+                                Delete Voting Data
+                            </button>
+                            <p id="admin-clear-info" class="admin-info"></p>
+                        </div>
+
+                    </div>
+                </section>
+
+                <!--- Tab: Results --->
+                <section id="tab-results" class="tab-content hidden">
+                    <h2>Ergebnisse</h2>
+                    <p class="voting-info">
+                        Zuschauer- und Jury-Punkte werden getrennt ausgewiesen und dann zusammengerechnet.
+                    </p>
+                    <ul id="results-list" class="singer-list results-list">
+                        <li class="loading">Wird geladen…</li>
+                    </ul>
+                </section>
+            </div>
+            <!--- End Voting Page --->
+
+            <!--- Start Footer --->
+            <div class="footer">
+                <div class="footer-content-wrapper">
+                    <div class="footer-section footer-logo">
+                        <img
+                            src="/assets/images/Eurovision_Cat_Contest_Logo_New.png"
+                            alt="United-By-Cats-Picture"
+                            class="footer-logo"
+                        />
+                    </div>
+
+                    <div class="footer-section legal-links">
+                        <h4>Rechtliches & Sicherheit</h4>
+                        <ul>
+                            <li><a href="/impressum">Impressum</a></li>
+                            <li>
+                                <a href="/datenschutz">Datenschutzerklärung</a>
+                            </li>
+                            <li><a href="/cookie-richtlinie">Cookies</a></li>
+                            <li><a href="/agb">AGB</a></li>
+                        </ul>
+                    </div>
+
+                    <div class="footer-section contact-info">
+                        <h4>Contact</h4>
+                        <p>Eurovision Cat Contest</p>
+                        <p>Lucas-Cranach Str. 4</p>
+                        <p>68163 Mannheim</p>
+                        <p>E-Mail: schmelzer2040@gmail.com</p>
+                    </div>
+                </div>
+            </div>
+            <!--- End Footer --->
+        </div>
+
+        <script src="/js/cookie.js"></script>
+        <script src="/js/auth.js"></script>
+        <script src="/js/voting.js"></script>
+    </body>
+</html>

@@ -121,3 +121,124 @@ export const verifyViewerAccount = (userId) => {
         });
     });
 };
+
+// Query: Alle Sänger inkl. Länderdaten (für Voting- und Results-Tab)
+export const getAllSingers = () => {
+    return new Promise((resolve, reject) => {
+        const query = `
+            SELECT
+                s.id          AS singer_id,
+                s.singer_name AS singer_name,
+                s.song_name   AS song_name,
+                c.id          AS country_id,
+                c.country     AS country,
+                c.landcode    AS landcode,
+                c.land_bild   AS land_bild
+            FROM singer s
+            JOIN country c ON s.country_id = c.id
+            ORDER BY c.country ASC
+        `;
+        db.all(query, [], (err, rows) => {
+            if (err) {
+                console.error(styleText("red", "DB-Fehler bei getAllSingers: " + err.message));
+                reject(err);
+            } else {
+                resolve(rows || []);
+            }
+        });
+    });
+};
+
+// Query: country-ID zu einem Landcode holen (z.B. "DE")
+export const getCountryByLandcode = (landcode) => {
+    return new Promise((resolve, reject) => {
+        db.get(`SELECT id, country, landcode FROM country WHERE landcode = ?`, [landcode], (err, row) => {
+            if (err) reject(err); else resolve(row);
+        });
+    });
+};
+
+// Query: Alle Viewer-Votes eines Users löschen (Überschreiben bei erneuter Abgabe)
+export const deleteViewerVotes = (viewerId) => {
+    return new Promise((resolve, reject) => {
+        db.run(`DELETE FROM viewer_vote WHERE viewer_id = ?`, [viewerId], function (err) {
+            if (err) reject(err); else resolve(this.changes);
+        });
+    });
+};
+
+// Query: Einen Viewer-Vote einfügen
+export const insertViewerVote = (viewerId, singerId, points) => {
+    return new Promise((resolve, reject) => {
+        db.run(
+            `INSERT INTO viewer_vote (viewer_id, singer_id, points) VALUES (?, ?, ?)`,
+            [viewerId, singerId, points],
+            function (err) { if (err) reject(err); else resolve(this.lastID); }
+        );
+    });
+};
+
+// Query: Alle Jury-Votes eines Jury-Landes löschen
+export const deleteJuryVotes = (juryCountry) => {
+    return new Promise((resolve, reject) => {
+        db.run(`DELETE FROM jury_vote WHERE jury_country = ?`, [juryCountry], function (err) {
+            if (err) reject(err); else resolve(this.changes);
+        });
+    });
+};
+
+// Query: Einen Jury-Vote einfügen
+export const insertJuryVote = (juryCountry, singerId, points) => {
+    return new Promise((resolve, reject) => {
+        db.run(
+            `INSERT INTO jury_vote (jury_country, singer_id, points) VALUES (?, ?, ?)`,
+            [juryCountry, singerId, points],
+            function (err) { if (err) reject(err); else resolve(this.lastID); }
+        );
+    });
+};
+
+// Query: Rohstimmen der Viewer, gruppiert nach Herkunftsland + Sänger
+// Wird für die ESC-Punkte-Umrechnung (12/10/8/.../1 pro Voting-Land) verwendet
+export const getViewerVoteSumsPerCountry = () => {
+    return new Promise((resolve, reject) => {
+        const query = `
+            SELECT
+                u.country_code AS voting_country,
+                v.singer_id    AS singer_id,
+                SUM(v.points)  AS total_raw_points
+            FROM viewer_vote v
+            JOIN viewer_users u ON v.viewer_id = u.id
+            GROUP BY u.country_code, v.singer_id
+        `;
+        db.all(query, [], (err, rows) => {
+            if (err) reject(err); else resolve(rows || []);
+        });
+    });
+};
+
+// Query: Alle Votes löschen (Viewer + Jury)
+export const deleteAllVotes = () => {
+    return new Promise((resolve, reject) => {
+        db.run(`DELETE FROM viewer_vote`, [], (err) => {
+            if (err) return reject(err);
+            db.run(`DELETE FROM jury_vote`, [], (err2) => {
+                if (err2) reject(err2); else resolve(true);
+            });
+        });
+    });
+};
+
+// Query: Jury-Punkte-Summen pro Sänger (alle Jury-Länder zusammen)
+export const getJuryPointsPerSinger = () => {
+    return new Promise((resolve, reject) => {
+        const query = `
+            SELECT singer_id, SUM(points) AS jury_points
+            FROM jury_vote
+            GROUP BY singer_id
+        `;
+        db.all(query, [], (err, rows) => {
+            if (err) reject(err); else resolve(rows || []);
+        });
+    });
+};
