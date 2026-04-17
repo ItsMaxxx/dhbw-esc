@@ -4,6 +4,9 @@ Ein vollständiges Abstimmungsportal für den DHBW-internen Eurovision Cat Conte
 
 ---
 
+- `CLAUDE.md`: Hinweise für Claude Code (Eigenheiten, Konventionen, Startbefehl)
+- `agents.md`: Allgemeines KI-Kontext-Dokument (Domänenwissen, DB-Schema, Sicherheit)
+
 ## Inhaltsverzeichnis
 
 - [Funktionsübersicht](#funktionsübersicht)
@@ -163,8 +166,16 @@ dhbw-esc/
 │   ├── login.html               # Login (Viewer & Jury)
 │   ├── signup.html              # Registrierung für Viewer
 │   ├── voting.html              # Abstimmungsseite (Viewer, Jury & Ergebnisse)
+│   ├── user.html                # Viewer-Profilseite (Daten ändern, Account löschen)
+│   ├── news/                    # News-Artikel (statische HTML-Seiten)
+│   │   ├── vienna-watch-alongs-2026.html
+│   │   ├── non-stop-hits-2026.html
+│   │   ├── vienna-guide-2026.html
+│   │   └── fan-predictions-2026.html
 │   └── rechtliches/             # Impressum, Datenschutz, AGB, Cookie-Richtlinie
 ├── .env                         # Umgebungsvariablen (nicht versioniert)
+├── CLAUDE.md                    # Hinweise für Claude Code
+├── agents.md                    # Allgemeines KI-Kontext-Dokument
 ├── Dockerfile                   # Docker-Konfiguration
 └── package.json                 # Abhängigkeiten & Skripte
 ```
@@ -223,6 +234,11 @@ Die Gesamtpunktzahl eines Sängers setzt sich zusammen aus:
 | `GET /datenschutz` | Datenschutzerklärung |
 | `GET /cookie-richtlinie` | Cookie-Richtlinie |
 | `GET /agb` | Allgemeine Geschäftsbedingungen |
+| `GET /user` | Viewer-Profilseite (nur eingeloggte Viewer) |
+| `GET /news/vienna-watch-alongs-2026` | News-Artikel |
+| `GET /news/non-stop-hits-2026` | News-Artikel |
+| `GET /news/vienna-guide-2026` | News-Artikel |
+| `GET /news/fan-predictions-2026` | News-Artikel |
 
 ### Auth-API
 
@@ -233,6 +249,16 @@ Die Gesamtpunktzahl eines Sängers setzt sich zusammen aus:
 | `GET` | `/api/verify?token=<token>` | E-Mail-Adresse verifizieren und Account freischalten |
 | `POST` | `/api/login` | Einloggen (Viewer, Jury oder Admin) |
 | `POST` | `/api/logout` | Session beenden und ausloggen |
+
+### User-API
+
+Alle User-Endpunkte erfordern eine aktive Viewer-Session.
+
+| Methode | Route | Beschreibung |
+|---------|-------|-------------|
+| `GET` | `/api/user/profile` | Viewer-Profil laden |
+| `POST` | `/api/user/update` | Viewer-Profil aktualisieren (inkl. optionalem Passwort-Wechsel) |
+| `DELETE` | `/api/user/delete` | Viewer-Account und alle zugehörigen Votes löschen |
 
 ### Voting-API
 

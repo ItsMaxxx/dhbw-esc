@@ -99,52 +99,14 @@ body {
 
 /* ----- Homepage Layout ----- */
 .homepage {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    display: flex;
+    flex-direction: column;
     gap: 1.5rem;
     padding: 2rem;
     color: white;
     font-family: sans-serif;
 }
 
-/* Card-Sektionen: Main Event, Latest News, Shop */
-.homepage .get-ready-for-neuostheim,
-.homepage .latest-news,
-.homepage .shop {
-    background: rgba(255, 255, 255, 0.08);
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    border-radius: 14px;
-    padding: 2.5rem 2rem;
-    min-height: 220px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    backdrop-filter: blur(6px);
-    transition:
-        transform 0.25s ease,
-        border-color 0.25s ease,
-        box-shadow 0.25s ease;
-    cursor: pointer;
-}
-
-.homepage .get-ready-for-neuostheim:hover,
-.homepage .latest-news:hover,
-.homepage .shop:hover {
-    transform: translateY(-4px);
-    border-color: #8c73ff;
-    box-shadow: 0 10px 30px rgba(106, 76, 255, 0.25);
-}
-
-.homepage .get-ready-for-neuostheim p,
-.homepage .latest-news p,
-.homepage .shop p {
-    margin: 0;
-    font-size: 1.4rem;
-    font-weight: bold;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    color: #fff;
-}
 
 /* ----- Hero: United By Cats (spannt volle Breite) ----- */
 .united-by-cats-picture {
@@ -279,5 +241,120 @@ body {
 
     .footer-section.footer-logo img {
         height: 80px;
+    }
+}
+
+/* ----- Hero Banner ----- */
+.hero {
+    position: relative;
+    border-radius: 20px;
+    overflow: hidden;
+    line-height: 0;
+}
+
+.hero__img {
+    display: block;
+    width: 100%;
+    height: auto;
+}
+
+.hero__overlay {
+    position: absolute;
+    inset: 0;
+    width: 52%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 1.4rem;
+    padding: 3rem 3.5rem;
+    background: linear-gradient(
+        to right,
+        rgba(10, 0, 30, 0.88) 0%,
+        rgba(10, 0, 30, 0.60) 70%,
+        transparent 100%
+    );
+}
+
+.hero__headline {
+    margin: 0;
+    font-family: sans-serif;
+    font-size: clamp(2.4rem, 4.5vw, 5rem);
+    font-weight: 900;
+    line-height: 1.0;
+    letter-spacing: -1px;
+    display: flex;
+    flex-direction: column;
+}
+
+.hero__hl-white {
+    color: #ffffff;
+    display: block;
+}
+
+.hero__hl-pink {
+    color: #ff2b6e;
+    display: block;
+}
+
+.hero__hl-line3 {
+    display: flex;
+    flex-wrap: wrap;
+    column-gap: 0.2em;
+}
+
+.hero__hl-line3 .hero__hl-pink,
+.hero__hl-line3 .hero__hl-white {
+    display: inline;
+}
+
+.hero__description {
+    margin: 0;
+    font-family: sans-serif;
+    font-size: 1rem;
+    line-height: 1.7;
+    color: rgba(255, 255, 255, 0.80);
+    max-width: 340px;
+}
+
+.hero__btn {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.8rem 2rem;
+    background: #ffffff;
+    color: #1a003f;
+    font-family: sans-serif;
+    font-size: 0.95rem;
+    font-weight: 800;
+    text-decoration: none;
+    border-radius: 50px;
+    width: fit-content;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.hero__btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 28px rgba(255, 255, 255, 0.22);
+}
+
+@media (max-width: 700px) {
+    .hero__overlay {
+        width: 100%;
+        background: linear-gradient(
+            to top,
+            rgba(10, 0, 30, 0.95) 0%,
+            rgba(10, 0, 30, 0.70) 55%,
+            transparent 100%
+        );
+        justify-content: flex-end;
+        padding: 2rem 1.5rem;
+        gap: 1rem;
+    }
+
+    .hero__headline {
+        font-size: clamp(2rem, 8vw, 3rem);
+    }
+
+    .hero__description {
+        max-width: 100%;
     }
 }

@@ -2,7 +2,7 @@ import bcrypt from "bcrypt";
 import crypto from "crypto";
 import { styleText } from "node:util";
 
-import { getJuryUser, getViewerUser, getViewerByEmailForLogin, createViewerUser, getViewerByToken, verifyViewerAccount } from "./database.js";
+import { getJuryUser, getViewerUser, getViewerByEmailForLogin, createViewerUser, getViewerByToken, verifyViewerAccount, getViewerById, updateViewerUser, deleteViewerUser } from "./database.js";
 import { sendVerificationEmail } from "./mailer.js";
 
 export const authenticateUser = async (role, email, password) => {
@@ -73,6 +73,53 @@ export const registerViewerUser = async (userData) => {
     } catch (error) {
         console.error(styleText("red", "Fehler bei registerViewerUser: " + error.message));
         return { success: false, message: "Interner Fehler bei der Registrierung." };
+    }
+};
+
+// Profil-Abfrage
+export const getViewerProfile = async (id) => {
+    try {
+        const row = await getViewerById(id);
+        if (!row) return null;
+        return {
+            firstName: row.first_name,
+            lastName: row.last_name,
+            email: row.email,
+            phonePrefix: row.phone_prefix,
+            phoneNumber: row.phone_number,
+            birthDate: row.birth_date,
+            gender: row.gender,
+            countryCode: row.country_code,
+        };
+    } catch (error) {
+        console.error(styleText("red", "Fehler bei getViewerProfile: " + error.message));
+        return null;
+    }
+};
+
+// Profil-Update
+export const updateViewerProfile = async (id, data) => {
+    try {
+        let hashedPassword = null;
+        if (data.password) {
+            hashedPassword = await bcrypt.hash(data.password, 10);
+        }
+        await updateViewerUser(id, data, hashedPassword);
+        return { success: true };
+    } catch (error) {
+        console.error(styleText("red", "Fehler bei updateViewerProfile: " + error.message));
+        return { success: false, message: "Interner Fehler beim Aktualisieren." };
+    }
+};
+
+// Account löschen
+export const deleteViewerAccount = async (id) => {
+    try {
+        await deleteViewerUser(id);
+        return { success: true };
+    } catch (error) {
+        console.error(styleText("red", "Fehler bei deleteViewerAccount: " + error.message));
+        return { success: false, message: "Interner Fehler beim Löschen." };
     }
 };
 

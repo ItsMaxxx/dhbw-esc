@@ -101,10 +101,17 @@ function renderVotingTab() {
     loginRequired.classList.add("hidden");
     const role = session.user.role;
 
-    // Admin sieht kein Voting-Formular
+    // Admin sieht kein Voting-Formular, aber die Sängerliste
     if (role === "admin") {
         header.classList.add("hidden");
         submitWrapper.classList.add("hidden");
+        if (votingState.votingOpen) {
+            const li = document.createElement("li");
+            li.className = "info-msg";
+            li.textContent = "Als Admin kannst du nicht abstimmen.";
+            list.appendChild(li);
+        }
+        for (const s of singers) list.appendChild(buildReadOnlyRow(s));
         return;
     }
 

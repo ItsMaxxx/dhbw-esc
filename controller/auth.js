@@ -21,11 +21,27 @@ document.addEventListener("DOMContentLoaded", async () => {
         displayText = "User";
       }
 
-      headerRight.innerHTML = `
-                <span style="color: white; font-size: 1.1rem; font-weight: bold; font-family: sans-serif; margin-right: 15px;">
-                    Logged In As ${displayText}
-                </span>
-                <button class="login-btn" onclick="logoutUser()">Logout</button>`;
+      headerRight.replaceChildren();
+
+      if (user.role === "viewer") {
+        const profileBtn = document.createElement("button");
+        profileBtn.className = "login-btn";
+        profileBtn.style.marginRight = "10px";
+        profileBtn.textContent = `Logged In As ${displayText}`;
+        profileBtn.addEventListener("click", () => { window.location.href = "/user"; });
+        headerRight.appendChild(profileBtn);
+      } else {
+        const nameSpan = document.createElement("span");
+        nameSpan.style.cssText = "color: white; font-size: 1.1rem; font-weight: bold; font-family: sans-serif; margin-right: 15px;";
+        nameSpan.textContent = `Logged In As ${displayText}`;
+        headerRight.appendChild(nameSpan);
+      }
+
+      const logoutBtn = document.createElement("button");
+      logoutBtn.className = "login-btn";
+      logoutBtn.textContent = "Logout";
+      logoutBtn.addEventListener("click", logoutUser);
+      headerRight.appendChild(logoutBtn);
     }
   } catch (error) {
     console.error("Fehler beim Prüfen der Session:", error);
@@ -37,7 +53,7 @@ async function logoutUser() {
   try {
     // Dem Backend sagen: Zerstöre die Session!
     await fetch("/api/logout", { method: "POST" });
-    window.location.reload();
+    window.location.href = "/";
   } catch (error) {
     console.error("Logout fehlgeschlagen", error);
   }

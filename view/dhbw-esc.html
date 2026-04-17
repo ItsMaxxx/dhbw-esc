@@ -16,6 +16,7 @@
         <link rel="stylesheet" href="/assets/css/dhbw-escc.css" />
         <link rel="stylesheet" href="/assets/css/backgroundd.css" />
         <link rel="stylesheet" href="/assets/css/cookie.css" />
+        <link rel="stylesheet" href="/assets/css/news.css" />
     </head>
 
     <body>
@@ -56,16 +57,151 @@
 
             <!--- Start Homepage --->
             <div class="homepage">
-                <section class="get-ready-for-neuostheim">
-                    <p>Main Event</p>
+                <!--- Hero Banner --->
+                <section class="hero">
+                    <img
+                        src="/assets/images/Eurovision_Cat_Contest_Banner.png"
+                        alt="Eurovision Cat Contest Logo"
+                        class="hero__img"
+                    />
+                    <div class="hero__overlay">
+                        <h1 class="hero__headline">
+                            <span class="hero__hl-white">Eurovision</span>
+                            <span class="hero__hl-pink">Non-Stop</span>
+                            <span class="hero__hl-line3">
+                                <span class="hero__hl-pink">Hits</span>
+                                <span class="hero__hl-white"> is back</span>
+                            </span>
+                        </h1>
+                        <p class="hero__description">
+                            All your favourite songs, streamed live and on
+                            demand — the biggest Eurovision playlist is back.
+                        </p>
+                        <a href="#" class="hero__btn">Watch on YouTube</a>
+                    </div>
                 </section>
 
-                <section class="latest-news">
-                    <p>Latest News</p>
-                </section>
+                <!--- News Section --->
+                <section class="news-section" id="news-section">
+                    <div class="news-section-header">
+                        <div class="news-title-group">
+                            <span class="news-label">Newsfeed</span>
+                            <h2 class="news-heading">
+                                <span class="news-latest">Latest</span> news
+                            </h2>
+                        </div>
+                        <a href="#news-section" class="news-view-all"
+                            >View all</a
+                        >
+                    </div>
 
-                <section class="shop">
-                    <p>Shop</p>
+                    <div class="news-cards">
+                        <!--- Card 1: Vienna Watch-Alongs --->
+                        <article class="news-card">
+                            <a
+                                href="/news/vienna-watch-alongs-2026"
+                                class="news-card-link"
+                            >
+                                <img
+                                    src="/assets/images/news/vienna-watchalong.jpg"
+                                    alt="Eurovision trophy on stage in Vienna"
+                                    class="news-card-img"
+                                    onerror="this.style.display = 'none'"
+                                />
+                                <span class="news-card-badge">Austria</span>
+                                <div class="news-card-body">
+                                    <h3 class="news-card-title">
+                                        Join us for the Vienna 1967 &amp; 2015
+                                        Watch-Alongs
+                                    </h3>
+                                    <div class="news-card-meta">
+                                        <span>Apr 17</span>
+                                        <span class="news-card-meta-dot"></span>
+                                        <span>4 min read</span>
+                                    </div>
+                                </div>
+                            </a>
+                        </article>
+
+                        <!--- Card 2: Non-Stop Hits --->
+                        <article class="news-card">
+                            <a
+                                href="/news/non-stop-hits-2026"
+                                class="news-card-link"
+                            >
+                                <img
+                                    src="/assets/images/news/non-stop-hits.jpg"
+                                    alt="Bright Eurovision-style heart graphic with playlist artwork"
+                                    class="news-card-img"
+                                    onerror="this.style.display = 'none'"
+                                />
+                                <span class="news-card-badge">Playlist</span>
+                                <div class="news-card-body">
+                                    <h3 class="news-card-title">
+                                        The Hits are back... Non-Stop!
+                                    </h3>
+                                    <div class="news-card-meta">
+                                        <span>Apr 18</span>
+                                        <span class="news-card-meta-dot"></span>
+                                        <span>3 min read</span>
+                                    </div>
+                                </div>
+                            </a>
+                        </article>
+
+                        <!--- Card 3: Vienna Guide --->
+                        <article class="news-card">
+                            <a
+                                href="/news/vienna-guide-2026"
+                                class="news-card-link"
+                            >
+                                <img
+                                    src="/assets/images/news/vienna-week.jpg"
+                                    alt="Person holding an Austrian flag in a city street"
+                                    class="news-card-img"
+                                    onerror="this.style.display = 'none'"
+                                />
+                                <span class="news-card-badge">Austria</span>
+                                <div class="news-card-body">
+                                    <h3 class="news-card-title">
+                                        What to do in Vienna during Eurovision
+                                        week
+                                    </h3>
+                                    <div class="news-card-meta">
+                                        <span>Apr 19</span>
+                                        <span class="news-card-meta-dot"></span>
+                                        <span>5 min read</span>
+                                    </div>
+                                </div>
+                            </a>
+                        </article>
+
+                        <!--- Card 4: Fan Predictions --->
+                        <article class="news-card">
+                            <a
+                                href="/news/fan-predictions-2026"
+                                class="news-card-link"
+                            >
+                                <img
+                                    src="/assets/images/news/fan-predictions.jpg"
+                                    alt="Crowd at a Eurovision-style event with colorful lights"
+                                    class="news-card-img"
+                                    onerror="this.style.display = 'none'"
+                                />
+                                <span class="news-card-badge">Community</span>
+                                <div class="news-card-body">
+                                    <h3 class="news-card-title">
+                                        Early fan favorites and bold predictions
+                                    </h3>
+                                    <div class="news-card-meta">
+                                        <span>Apr 20</span>
+                                        <span class="news-card-meta-dot"></span>
+                                        <span>4 min read</span>
+                                    </div>
+                                </div>
+                            </a>
+                        </article>
+                    </div>
                 </section>
 
                 <section class="united-by-cats-picture">

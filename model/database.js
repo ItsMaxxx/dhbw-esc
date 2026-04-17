@@ -122,6 +122,33 @@ export const verifyViewerAccount = (userId) => {
     });
 };
 
+// Query: Viewer-Profil anhand ID laden
+export const getViewerById = (id) => {
+    return new Promise((resolve, reject) => {
+        const query = `SELECT id, first_name, last_name, email, phone_prefix, phone_number, birth_date, gender, country_code FROM viewer_users WHERE id = ?`;
+        db.get(query, [id], (err, row) => {
+            if (err) reject(err); else resolve(row);
+        });
+    });
+};
+
+// Query: Viewer-Profil aktualisieren (mit oder ohne neues Passwort)
+export const updateViewerUser = (id, data, hashedPassword) => {
+    return new Promise((resolve, reject) => {
+        let query, params;
+        if (hashedPassword) {
+            query = `UPDATE viewer_users SET first_name=?, last_name=?, email=?, phone_prefix=?, phone_number=?, birth_date=?, gender=?, country_code=?, password=? WHERE id=?`;
+            params = [data.firstName, data.lastName, data.email, data.phonePrefix || null, data.phoneNumber || null, data.birthDate || null, data.gender || null, data.countryCode, hashedPassword, id];
+        } else {
+            query = `UPDATE viewer_users SET first_name=?, last_name=?, email=?, phone_prefix=?, phone_number=?, birth_date=?, gender=?, country_code=? WHERE id=?`;
+            params = [data.firstName, data.lastName, data.email, data.phonePrefix || null, data.phoneNumber || null, data.birthDate || null, data.gender || null, data.countryCode, id];
+        }
+        db.run(query, params, function(err) {
+            if (err) reject(err); else resolve(this.changes);
+        });
+    });
+};
+
 // Query: Alle Sänger inkl. Länderdaten (für Voting- und Results-Tab)
 export const getAllSingers = () => {
     return new Promise((resolve, reject) => {
@@ -224,6 +251,18 @@ export const deleteAllVotes = () => {
             if (err) return reject(err);
             db.run(`DELETE FROM jury_vote`, [], (err2) => {
                 if (err2) reject(err2); else resolve(true);
+            });
+        });
+    });
+};
+
+// Query: Viewer-Account und zugehörige Votes löschen
+export const deleteViewerUser = (id) => {
+    return new Promise((resolve, reject) => {
+        db.run(`DELETE FROM viewer_vote WHERE viewer_id = ?`, [id], (err) => {
+            if (err) return reject(err);
+            db.run(`DELETE FROM viewer_users WHERE id = ?`, [id], function (err2) {
+                if (err2) reject(err2); else resolve(this.changes);
             });
         });
     });

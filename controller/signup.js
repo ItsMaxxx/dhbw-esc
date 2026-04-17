@@ -1,3 +1,34 @@
+document.querySelectorAll(".select-wrapper select").forEach((select) => {
+  let isOpen = false;
+
+  select.addEventListener("mousedown", () => {
+    if (isOpen) {
+      select.closest(".select-wrapper").classList.remove("is-open");
+      isOpen = false;
+    } else {
+      isOpen = true;
+      select.closest(".select-wrapper").classList.add("is-open");
+    }
+  });
+
+  select.addEventListener("change", () => {
+    select.closest(".select-wrapper").classList.remove("is-open");
+    isOpen = false;
+  });
+
+  select.addEventListener("blur", () => {
+    select.closest(".select-wrapper").classList.remove("is-open");
+    isOpen = false;
+  });
+
+  select.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" || e.key === "Enter") {
+      select.closest(".select-wrapper").classList.remove("is-open");
+      isOpen = false;
+    }
+  });
+});
+
 document.getElementById("signupForm").addEventListener("submit", async (e) => {
   e.preventDefault();
 
