@@ -269,7 +269,7 @@ app.post("/api/signup", async (req, res) => {
       styleText("red", "Registrierung abgelehnt: Pflichtfelder fehlen."),
     );
     return res
-      .status(400)
+      .status(401)
       .json({ success: false, message: "Bitte alle Pflichtfelder ausfüllen." });
   }
 
@@ -281,7 +281,7 @@ app.post("/api/signup", async (req, res) => {
       ),
     );
     return res
-      .status(400)
+      .status(403)
       .json({ success: false, message: "Passwörter stimmen nicht überein." });
   }
 
@@ -293,7 +293,7 @@ app.post("/api/signup", async (req, res) => {
         "Registrierung abgelehnt: Passwort erfüllt die Anforderungen nicht.",
       ),
     );
-    return res.status(400).json({
+    return res.status(422).json({
       success: false,
       message: "Passwort erfüllt die Anforderungen nicht.",
     });
@@ -306,7 +306,7 @@ app.post("/api/signup", async (req, res) => {
         "Registrierung abgelehnt: 18+ und Nutzungsbedingungen nicht bestätigt.",
       ),
     );
-    return res.status(400).json({
+    return res.status(422).json({
       success: false,
       message:
         "Du musst mindestens 18 Jahre alt sein und die Nutzungsbedingungen akzeptieren.",
@@ -476,20 +476,20 @@ app.post("/api/user/update", async (req, res) => {
 
   if (!firstName || !lastName || !email || !countryCode) {
     return res
-      .status(400)
+      .status(401)
       .json({ success: false, message: "Bitte alle Pflichtfelder ausfüllen." });
   }
 
   if (password) {
     if (password !== confirmPassword) {
       return res
-        .status(400)
+        .status(403)
         .json({ success: false, message: "Passwörter stimmen nicht überein." });
     }
     const passwordPattern = /^(?=.*[A-Z])(?=.*[!@#$%^&*()\-]).{8,}$/;
     if (!passwordPattern.test(password)) {
       return res
-        .status(400)
+        .status(422)
         .json({
           success: false,
           message: "Passwort erfüllt die Anforderungen nicht.",
@@ -645,7 +645,7 @@ app.post("/api/vote/viewer", async (req, res) => {
   }
   if (!votingState.votingOpen) {
     return res
-      .status(403)
+      .status(425)
       .json({ success: false, message: "Das Voting hat noch nicht begonnen!" });
   }
   if (!user.id) {
@@ -681,7 +681,7 @@ app.post("/api/vote/jury", async (req, res) => {
   }
   if (!votingState.votingOpen) {
     return res
-      .status(403)
+      .status(425)
       .json({ success: false, message: "Das Voting hat noch nicht begonnen!" });
   }
 
@@ -700,7 +700,7 @@ app.get("/api/results", async (req, res) => {
   const user = req.session && req.session.user;
   const isAdmin = user && user.role === "admin";
   if (!votingState.resultsVisible && !isAdmin) {
-    return res.status(403).json({
+    return res.status(425).json({
       success: false,
       message: "Die Ergebnisse wurden noch nicht freigegeben.",
     });
@@ -742,19 +742,36 @@ function getShortDeviceInfo(uaString) {
   let browser = "Unbekannter Browser";
   let os = "Unbekanntes OS";
 
-  if (uaString.includes("OPR/") || uaString.includes("Opera"))
-    browser = "Opera";
-  else if (uaString.includes("Edg/")) browser = "Edge";
-  else if (uaString.includes("Chrome/")) browser = "Chrome";
-  else if (uaString.includes("Firefox/")) browser = "Firefox";
-  else if (uaString.includes("Safari/")) browser = "Safari";
+  switch(uaString.includes()) {
+    case "Opera":
+      browser = "Opera";
+      break;
+    case "Firefox":
+      browser = "Firefox";
+      break;
+    case "Safari":
+      browser = "Safari";
+      break;
+    case "Chrome":
+      browser = "Chrome";
+  }
 
-  if (uaString.includes("Windows")) os = "Windows";
-  else if (uaString.includes("Mac OS")) os = "macOS";
-  else if (uaString.includes("Android")) os = "Android";
-  else if (uaString.includes("iPhone") || uaString.includes("iPad")) os = "iOS";
-  else if (uaString.includes("Linux")) os = "Linux";
-
+  switch(uaString.includes()) {
+    case "Windows":
+      os = "Windows";
+      break;
+    case "macOS":
+      os = "macOS"
+      break;
+    case "Android":
+      os = "Android";
+      break;
+    case "IOS":
+      os = "IOS";
+      break;
+    case "Linux":
+      os = "Linx";
+  }
   return `${os} mit ${browser}`;
 }
 
