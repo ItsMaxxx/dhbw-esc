@@ -10,6 +10,8 @@ import express from "express";
 import path from "path";
 import { fileURLToPath } from "url";
 import session from "express-session";
+import { execFileSync } from "child_process";
+// execFileSync wird genutzt, um in app.listen() Fehlerinformationen auszugeben, wenn der Port nicht frei ist
 import { styleText } from "node:util";
 
 // Importiere die Authentifizierungslogik aus dem Model
@@ -17,6 +19,9 @@ import {
   authenticateUser,
   registerViewerUser,
   verifyUserToken,
+  getViewerProfile,
+  updateViewerProfile,
+  deleteViewerAccount,
 } from "../model/authModel.js";
 
 // Importiere die Voting-Logik aus dem Model
@@ -68,8 +73,36 @@ app.use(
 );
 
 //Ist der Port verfügbar?
-app.listen(port, () => {
+const server = app.listen(port, () => {
   console.log(styleText("green", `Server ist bereit auf Port ${port}`));
+});
+
+server.on("error", (err) => {
+  if (err.code === "EADDRINUSE") {
+    console.error(styleText("red", `Port ${port} ist bereits belegt.`));
+    try {
+      // Windows → netstat, sonst (macOS/Linux) → lsof
+      const info =
+        process.platform === "win32"
+          ? execFileSync("netstat", ["-ano"])
+              .toString()
+              .split("\n")
+              .filter((l) => l.includes(`:${port}`))
+              .join("\n")
+              .trim()
+          : execFileSync("lsof", ["-i", `:${port}`])
+              .toString()
+              .trim();
+      console.error(styleText("yellow", `Belegender Prozess:\n${info}`));
+    } catch {
+      console.error(
+        styleText("yellow", "Prozess-Info konnte nicht ermittelt werden."),
+      );
+    }
+    process.exit(1);
+  } else {
+    throw err;
+  }
 });
 
 //
@@ -86,7 +119,14 @@ app.use(
 );
 
 // Frontend-JS wird nicht statisch ausgeliefert, sondern über explizite Routen
-const jsFiles = ["auth.js", "cookie.js", "login.js", "signup.js", "voting.js"];
+const jsFiles = [
+  "auth.js",
+  "cookie.js",
+  "login.js",
+  "signup.js",
+  "voting.js",
+  "user.js",
+];
 for (const file of jsFiles) {
   app.get(`/js/${file}`, (req, res) => {
     res.sendFile(path.join(__dirname, file));
@@ -145,6 +185,41 @@ app.get("/agb", (req, res) => {
   res
     .status(200)
     .sendFile(path.join(__dirname, "../view/rechtliches/agb.html"));
+});
+
+app.get("/user", (req, res) => {
+  logClientInfo(req);
+  res.status(200).sendFile(path.join(__dirname, "../view/user.html"));
+});
+
+app.get("/news/vienna-watch-alongs-2026", (req, res) => {
+  logClientInfo(req);
+  res
+    .status(200)
+    .sendFile(
+      path.join(__dirname, "../view/news/vienna-watch-alongs-2026.html"),
+    );
+});
+
+app.get("/news/non-stop-hits-2026", (req, res) => {
+  logClientInfo(req);
+  res
+    .status(200)
+    .sendFile(path.join(__dirname, "../view/news/non-stop-hits-2026.html"));
+});
+
+app.get("/news/vienna-guide-2026", (req, res) => {
+  logClientInfo(req);
+  res
+    .status(200)
+    .sendFile(path.join(__dirname, "../view/news/vienna-guide-2026.html"));
+});
+
+app.get("/news/fan-predictions-2026", (req, res) => {
+  logClientInfo(req);
+  res
+    .status(200)
+    .sendFile(path.join(__dirname, "../view/news/fan-predictions-2026.html"));
 });
 
 //
@@ -364,20 +439,126 @@ app.post("/api/logout", (req, res) => {
   });
 });
 
+// API-Endpunkt: Viewer-Profil laden
+app.get("/api/user/profile", async (req, res) => {
+  const user = req.session && req.session.user;
+  if (!user || user.role !== "viewer") {
+    return res
+      .status(401)
+      .json({ success: false, message: "Nicht eingeloggt." });
+  }
+  const profile = await getViewerProfile(user.id);
+  if (!profile) return res.status(404).json({ success: false });
+  res.status(200).json({ success: true, profile });
+});
+
+// API-Endpunkt: Viewer-Profil aktualisieren
+app.post("/api/user/update", async (req, res) => {
+  const user = req.session && req.session.user;
+  if (!user || user.role !== "viewer") {
+    return res
+      .status(401)
+      .json({ success: false, message: "Nicht eingeloggt." });
+  }
+
+  const {
+    firstName,
+    lastName,
+    email,
+    phonePrefix,
+    phoneNumber,
+    birthDate,
+    gender,
+    countryCode,
+    password,
+    confirmPassword,
+  } = req.body;
+
+  if (!firstName || !lastName || !email || !countryCode) {
+    return res
+      .status(400)
+      .json({ success: false, message: "Bitte alle Pflichtfelder ausfüllen." });
+  }
+
+  if (password) {
+    if (password !== confirmPassword) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Passwörter stimmen nicht überein." });
+    }
+    const passwordPattern = /^(?=.*[A-Z])(?=.*[!@#$%^&*()\-]).{8,}$/;
+    if (!passwordPattern.test(password)) {
+      return res
+        .status(400)
+        .json({
+          success: false,
+          message: "Passwort erfüllt die Anforderungen nicht.",
+        });
+    }
+  }
+
+  const result = await updateViewerProfile(user.id, {
+    firstName,
+    lastName,
+    email,
+    phonePrefix,
+    phoneNumber,
+    birthDate,
+    gender,
+    countryCode,
+    password,
+  });
+
+  if (result.success) {
+    req.session.user.firstName = firstName;
+    req.session.user.lastName = lastName;
+    req.session.user.country = countryCode;
+    return res.status(200).json({ success: true });
+  }
+  return res.status(500).json(result);
+});
+
+// API-Endpunkt: Viewer-Account löschen
+app.delete("/api/user/delete", async (req, res) => {
+  const user = req.session && req.session.user;
+  if (!user || user.role !== "viewer") {
+    return res
+      .status(401)
+      .json({ success: false, message: "Nicht eingeloggt." });
+  }
+
+  const result = await deleteViewerAccount(user.id);
+  if (!result.success) return res.status(500).json(result);
+
+  req.session.destroy(() => {
+    res.clearCookie("connect.sid");
+    console.log(styleText("green", `Viewer-Account ID=${user.id} gelöscht.`));
+    res.status(200).json({ success: true });
+  });
+});
+
 // API-Endpunkt: Alle Sänger für Voting-/Results-Liste
 app.get("/api/singers", async (req, res) => {
   try {
     const singers = await fetchAllSingers();
     res.status(200).json(singers);
   } catch (err) {
-    console.error(styleText("red", "Fehler beim Laden der Sänger: " + err.message));
-    res.status(500).json({ success: false, message: "Sänger konnten nicht geladen werden." });
+    console.error(
+      styleText("red", "Fehler beim Laden der Sänger: " + err.message),
+    );
+    res.status(500).json({
+      success: false,
+      message: "Sänger konnten nicht geladen werden.",
+    });
   }
 });
 
 // API-Endpunkt: Voting-Status abfragen (öffentlich)
 app.get("/api/admin/state", (req, res) => {
-  res.status(200).json({ votingOpen: votingState.votingOpen, resultsVisible: votingState.resultsVisible });
+  res.status(200).json({
+    votingOpen: votingState.votingOpen,
+    resultsVisible: votingState.resultsVisible,
+  });
 });
 
 // SSE-Endpunkt: Echtzeit-Updates für alle verbundenen Clients
@@ -452,16 +633,26 @@ app.post("/api/admin/clear-votes", requireAdmin, async (req, res) => {
 app.post("/api/vote/viewer", async (req, res) => {
   const user = req.session && req.session.user;
   if (!user) {
-    return res.status(401).json({ success: false, message: "Bitte einloggen." });
+    return res
+      .status(401)
+      .json({ success: false, message: "Bitte einloggen." });
   }
   if (user.role !== "viewer") {
-    return res.status(403).json({ success: false, message: "Nur Zuschauer dürfen hier abstimmen." });
+    return res.status(403).json({
+      success: false,
+      message: "Nur Zuschauer dürfen hier abstimmen.",
+    });
   }
   if (!votingState.votingOpen) {
-    return res.status(403).json({ success: false, message: "Das Voting hat noch nicht begonnen!" });
+    return res
+      .status(403)
+      .json({ success: false, message: "Das Voting hat noch nicht begonnen!" });
   }
   if (!user.id) {
-    return res.status(400).json({ success: false, message: "Session ohne User-ID, bitte neu einloggen." });
+    return res.status(400).json({
+      success: false,
+      message: "Session ohne User-ID, bitte neu einloggen.",
+    });
   }
 
   const { votes } = req.body || {};
@@ -478,13 +669,20 @@ app.post("/api/vote/viewer", async (req, res) => {
 app.post("/api/vote/jury", async (req, res) => {
   const user = req.session && req.session.user;
   if (!user) {
-    return res.status(401).json({ success: false, message: "Bitte einloggen." });
+    return res
+      .status(401)
+      .json({ success: false, message: "Bitte einloggen." });
   }
   if (user.role !== "jury") {
-    return res.status(403).json({ success: false, message: "Nur Jury-Mitglieder dürfen hier abstimmen." });
+    return res.status(403).json({
+      success: false,
+      message: "Nur Jury-Mitglieder dürfen hier abstimmen.",
+    });
   }
   if (!votingState.votingOpen) {
-    return res.status(403).json({ success: false, message: "Das Voting hat noch nicht begonnen!" });
+    return res
+      .status(403)
+      .json({ success: false, message: "Das Voting hat noch nicht begonnen!" });
   }
 
   const { votes } = req.body || {};
@@ -502,14 +700,22 @@ app.get("/api/results", async (req, res) => {
   const user = req.session && req.session.user;
   const isAdmin = user && user.role === "admin";
   if (!votingState.resultsVisible && !isAdmin) {
-    return res.status(403).json({ success: false, message: "Die Ergebnisse wurden noch nicht freigegeben." });
+    return res.status(403).json({
+      success: false,
+      message: "Die Ergebnisse wurden noch nicht freigegeben.",
+    });
   }
   try {
     const results = await calculateResults();
     res.status(200).json(results);
   } catch (err) {
-    console.error(styleText("red", "Fehler beim Berechnen der Ergebnisse: " + err.message));
-    res.status(500).json({ success: false, message: "Ergebnisse konnten nicht berechnet werden." });
+    console.error(
+      styleText("red", "Fehler beim Berechnen der Ergebnisse: " + err.message),
+    );
+    res.status(500).json({
+      success: false,
+      message: "Ergebnisse konnten nicht berechnet werden.",
+    });
   }
 });
 

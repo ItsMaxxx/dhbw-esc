@@ -50,15 +50,16 @@
                 <div class="two-cols">
                     <div class="input-group">
                         <label for="phonePrefix">Vorwahl</label>
-                        <select id="phonePrefix">
-                            <option value="">Bitte wählen</option>
-                            <option value="+49">+49 (DE)</option>
-                            <option value="+33">+33 (FR)</option>
-                            <option value="+44">+44 (UK)</option>
-                            <option value="+39">+39 (IT)</option>
-                            <option value="+34">+34 (ES)</option>
-                            <!-- weitere Vorwahlen nach Bedarf -->
-                        </select>
+                        <div class="select-wrapper">
+                            <select id="phonePrefix">
+                                <option value="">Bitte wählen</option>
+                                <option value="+49">+49 (DE)</option>
+                                <option value="+33">+33 (FR)</option>
+                                <option value="+44">+44 (UK)</option>
+                                <option value="+39">+39 (IT)</option>
+                                <option value="+34">+34 (ES)</option>
+                            </select>
+                        </div>
                     </div>
                     <div class="input-group">
                         <label for="phoneNumber">Telefonnummer</label>
@@ -73,28 +74,31 @@
                     </div>
                     <div class="input-group">
                         <label for="gender">Geschlecht</label>
-                        <select id="gender">
-                            <option value="">Keine Angabe</option>
-                            <option value="female">Weiblich</option>
-                            <option value="male">Männlich</option>
-                            <option value="other">Divers</option>
-                        </select>
+                        <div class="select-wrapper">
+                            <select id="gender">
+                                <option value="">Keine Angabe</option>
+                                <option value="female">Weiblich</option>
+                                <option value="male">Männlich</option>
+                                <option value="other">Divers</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
 
                 <div class="input-group">
                     <label for="countryCode">Land oder Gebiet des Wohnsitzes *</label>
-                    <select id="countryCode" required>
-                        <option value="">Bitte wählen</option>
-                        <option value="DE">Deutschland (DE)</option>
-                        <option value="FR">Frankreich (FR)</option>
-                        <option value="IE">Irland (IE)</option>
-                        <option value="ES">Spanien (ES)</option>
-                        <option value="IT">Italien (IT)</option>
-                        <option value="SE">Schweden (SE)</option>
-                        <option value="UK">Vereinigtes Königreich (UK)</option>
-                        <!-- nach Bedarf erweitern -->
-                    </select>
+                    <div class="select-wrapper">
+                        <select id="countryCode" required>
+                            <option value="">Bitte wählen</option>
+                            <option value="DE">Deutschland (DE)</option>
+                            <option value="FR">Frankreich (FR)</option>
+                            <option value="IE">Irland (IE)</option>
+                            <option value="ES">Spanien (ES)</option>
+                            <option value="IT">Italien (IT)</option>
+                            <option value="SE">Schweden (SE)</option>
+                            <option value="UK">Vereinigtes Königreich (UK)</option>
+                        </select>
+                    </div>
                 </div>
 
                 <div class="two-cols">

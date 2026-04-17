@@ -11,3 +11,33 @@ body,
     );
     background-attachment: fixed;
 }
+
+/* Farbige Schimmer oben rechts (blau) und unten links (rot) */
+body::before,
+body::after {
+    content: '';
+    position: fixed;
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 0;
+    filter: blur(100px);
+    opacity: 0.35;
+}
+
+body::before {
+    /* Blauer Schimmer oben rechts */
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(circle, #1a6fff 0%, transparent 70%);
+    top: -150px;
+    right: -150px;
+}
+
+body::after {
+    /* Roter/Pink Schimmer unten links */
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(circle, #cc003d 0%, transparent 70%);
+    bottom: -150px;
+    left: -150px;
+}
