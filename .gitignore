@@ -1,6 +1,4 @@
 ### --- Default ignored files --- ###
-
-
 /shelf/
 /workspace.xml
 # Ignored default folder with query files
@@ -11,9 +9,7 @@
 # Editor-based HTTP Client requests
 /httpRequests/
 
-
 ### --- Eigene Ergänzungen für das Projekt --- ###
-
 
 # WICHTIG - enthält tausende Dateien, die jederzeit von npm install automatisch generiert werden
 node_modules/
@@ -41,3 +37,7 @@ npm-debug.log*
 # OS-spezifische Dateien
 .DS_Store
 Thumbs.db
+
+# KI-Hilfsdateien
+agents.md
+CLAUDE.md
