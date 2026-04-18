@@ -4,8 +4,19 @@ Ein vollständiges Abstimmungsportal für den DHBW-internen Eurovision Cat Conte
 
 ---
 
-- `CLAUDE.md`: Hinweise für Claude Code (Eigenheiten, Konventionen, Startbefehl)
-- `agents.md`: Allgemeines KI-Kontext-Dokument (Domänenwissen, DB-Schema, Sicherheit)
+## Quickstart
+
+```bash
+git clone <repository-url>
+cd dhbw-esc
+npm install
+# .env anlegen (siehe Abschnitt Umgebungsvariablen)
+npm start
+```
+
+Der Server läuft dann unter `http://localhost:3000` (oder dem in `.env` gesetzten Port).
+
+---
 
 ## Inhaltsverzeichnis
 
@@ -15,8 +26,10 @@ Ein vollständiges Abstimmungsportal für den DHBW-internen Eurovision Cat Conte
 - [Umgebungsvariablen (.env)](#umgebungsvariablen-env)
 - [Starten der Anwendung](#starten-der-anwendung)
 - [Docker-Deployment](#docker-deployment)
+- [Jury- und Admin-Accounts einrichten](#jury--und-admin-accounts-einrichten)
 - [Projektstruktur](#projektstruktur)
 - [Voting-Ablauf](#voting-ablauf)
+- [Bekannte Einschränkungen](#bekannte-einschränkungen)
 - [Routen & API](#routen--api)
 - [Verwendete Technologien](#verwendete-technologien)
 
@@ -147,6 +160,32 @@ docker run -p 3000:3000 --env-file .env dhbw-esc
 
 ---
 
+## Jury- und Admin-Accounts einrichten
+
+Jury- und Admin-Accounts werden **nicht** über die Web-Oberfläche angelegt, sondern direkt in der SQLite-Datenbank (`model/esc-database.db`). Die Passwörter werden dort im Klartext gespeichert.
+
+Beispiel mit dem SQLite-CLI:
+
+```bash
+sqlite3 model/esc-database.db
+```
+
+```sql
+-- Jury-Mitglied hinzufügen
+INSERT INTO login_data_jury (jury_mail, password, country)
+VALUES ('jury-deutschland@example.com', 'sicheresPasswort', 'Germany');
+
+-- Admin hinzufügen (country muss exakt "Admin" sein)
+INSERT INTO login_data_jury (jury_mail, password, country)
+VALUES ('admin@example.com', 'sicheresPasswort', 'Admin');
+```
+
+Der Login für Jury und Admin erfolgt anschließend über dieselbe Login-Seite wie für Viewer.
+
+> **Hinweis:** Die Datenbank (`esc-database.db`) liegt bereits im Repository und enthält das fertige Schema. Sie wird beim Start **nicht** automatisch neu angelegt – die Datei muss vorhanden sein.
+
+---
+
 ## Projektstruktur
 
 ```
@@ -159,13 +198,14 @@ dhbw-esc/
 │   └── js/                      # Client-seitiges JavaScript (auth, voting, …)
 ├── controller/
 │   ├── app.js                   # Express-Server – Routen, Middleware, API-Endpunkte
-│   ├── auth.js                  # Client-JS: Session-Check und Weiterleitungslogik
+│   ├── auth.js                  # Client-JS (per Route ausgeliefert): Session-Check und Weiterleitungslogik
 │   ├── cookie.js                # Client-JS: Cookie-Banner-Steuerung
 │   ├── login.js                 # Client-JS: Login-Formular
 │   ├── signup.js                # Client-JS: Signup-Formular inkl. Dropdown-Befüllung und Auto-Auswahl
 │   ├── user.js                  # Client-JS: Profil laden, bearbeiten, Account löschen
 │   ├── validate_userdata.js     # Client-JS: Gemeinsame Eingabevalidierung (Signup & Profil)
 │   └── voting.js                # Client-JS: Voting-Oberfläche und SSE-Listener
+│   (Die JS-Dateien hier werden nicht statisch serviert, sondern über explizite /js/<datei>.js-Routen.)
 ├── model/
 │   ├── authModel.js             # Registrierung, Login, E-Mail-Verifizierung
 │   ├── database.js              # Alle SQLite-Datenbankabfragen
@@ -228,6 +268,16 @@ Die Gesamtpunktzahl eines Sängers setzt sich zusammen aus:
 
 - **Jury-Punkte:** direkte Summe aller vergebenen ESC-Punkte aller Jury-Länder.
 - **Viewer-Punkte:** Die Rohstimmen werden *pro Herkunftsland* nach Höhe sortiert. Das Land mit den meisten Rohstimmen erhält 12 Punkte, Platz 2 erhält 10, dann 8, 7, 6, 5, 4, 3, 2, 1 – analog zum echten ESC-Telefonvoting.
+
+---
+
+## Bekannte Einschränkungen
+
+| Einschränkung | Details |
+|---------------|---------|
+| **Voting-Status ist flüchtig** | `votingOpen` und `resultsVisible` werden nur im Arbeitsspeicher gehalten. Ein Server-Neustart setzt den Status zurück – laufende Abstimmungen müssen danach neu gestartet werden. |
+| **Datenbank muss existieren** | Die SQLite-Datei wird beim Start nicht automatisch angelegt. Die mitgelieferte `model/esc-database.db` muss vorhanden bleiben. |
+| **Jury-Passwörter im Klartext** | Passwörter in `login_data_jury` werden nicht gehasht gespeichert – bewusste Vereinfachung für den internen Einsatz. |
 
 ---
 
