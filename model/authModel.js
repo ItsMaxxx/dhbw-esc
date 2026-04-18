@@ -2,7 +2,9 @@ import bcrypt from "bcrypt";
 import crypto from "crypto";
 import { styleText } from "node:util";
 
-import { getJuryUser, getViewerUser, getViewerByEmailForLogin, createViewerUser, getViewerByToken, verifyViewerAccount, getViewerById, updateViewerUser, deleteViewerUser } from "./database.js";
+import { getJuryUser, getViewerUser, getViewerByEmailForLogin, createViewerUser, getViewerByToken, verifyViewerAccount, getViewerById, updateViewerUser, deleteViewerUser, getAllCountries, countryCodeExists, vorwahlExists } from "./database.js";
+
+export { getAllCountries };
 import { sendVerificationEmail } from "./mailer.js";
 
 export const authenticateUser = async (role, email, password) => {
@@ -121,6 +123,68 @@ export const deleteViewerAccount = async (id) => {
         console.error(styleText("red", "Fehler bei deleteViewerAccount: " + error.message));
         return { success: false, message: "Interner Fehler beim Löschen." };
     }
+};
+
+// Serverseitige Validierung (Pflichtfelder, Format, DB-Whitelists)
+export const validateUserDataDB = async (data, requirePassword = false) => {
+    const { firstName, lastName, email, phonePrefix, phoneNumber,
+            birthDate, gender, countryCode, password, confirmPassword } = data;
+
+    if (!firstName || !lastName || !email || !countryCode) {
+        return { valid: false, message: "Bitte alle Pflichtfelder ausfüllen." };
+    }
+
+    const NAME_PATTERN = /^[a-zA-ZäöüÄÖÜß\s\-']{1,50}$/;
+    if (!NAME_PATTERN.test(firstName)) {
+        return { valid: false, message: "Vorname enthält ungültige Zeichen oder ist zu lang (max. 50)." };
+    }
+    if (!NAME_PATTERN.test(lastName)) {
+        return { valid: false, message: "Nachname enthält ungültige Zeichen oder ist zu lang (max. 50)." };
+    }
+
+    const EMAIL_PATTERN = /^[^\s@]{1,64}@[^\s@]+\.[^\s@]{2,}$/;
+    if (email.length > 254 || !EMAIL_PATTERN.test(email)) {
+        return { valid: false, message: "Bitte eine gültige E-Mail-Adresse eingeben." };
+    }
+
+    const landcodeOk = await countryCodeExists(countryCode);
+    if (!landcodeOk) {
+        return { valid: false, message: "Ungültiger Ländercode." };
+    }
+
+    const ALLOWED_GENDERS = new Set(["", "female", "male", "other"]);
+    if (gender !== undefined && !ALLOWED_GENDERS.has(gender)) {
+        return { valid: false, message: "Ungültiger Wert für Geschlecht." };
+    }
+
+    if (phonePrefix) {
+        const vorwahlOk = await vorwahlExists(phonePrefix);
+        if (!vorwahlOk) {
+            return { valid: false, message: "Ungültige Telefonvorwahl." };
+        }
+    }
+
+    if (phoneNumber && !/^[0-9\s\-/]{1,20}$/.test(phoneNumber)) {
+        return { valid: false, message: "Telefonnummer enthält ungültige Zeichen (max. 20 Ziffern)." };
+    }
+
+    if (birthDate && !/^\d{4}-\d{2}-\d{2}$/.test(birthDate)) {
+        return { valid: false, message: "Ungültiges Datumsformat für Geburtsdatum." };
+    }
+
+    if (requirePassword && !password) {
+        return { valid: false, message: "Bitte alle Pflichtfelder ausfüllen." };
+    }
+    if (password) {
+        if (!/^(?=.*[A-Z])(?=.*[!@#$%^&*()\-]).{8,}$/.test(password)) {
+            return { valid: false, message: "Passwort erfüllt die Anforderungen nicht." };
+        }
+        if (password !== confirmPassword) {
+            return { valid: false, message: "Passwörter stimmen nicht überein." };
+        }
+    }
+
+    return { valid: true };
 };
 
 // Token-Verifizierungs-Logik

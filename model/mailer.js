@@ -13,15 +13,25 @@ const transporter = nodemailer.createTransport({
   },
 });
 
+// HTML-Sonderzeichen escapen um Injection in E-Mail-Templates zu verhindern
+const escapeHtml = (str) =>
+  str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+
 export const sendVerificationEmail = async (userEmail, token, firstName) => {
   const verifyUrl = `http://localhost:3000/api/verify?token=${token}`;
+  const safeFirstName = escapeHtml(firstName);
 
   const mailOptions = {
     from: `"DHBW-ESC Voting" <${process.env.GMAIL_EMAIL}>`,
     to: userEmail,
     subject: "Bitte bestätige deine E-Mail-Adresse",
     html: `
-            <h2>Hallo ${firstName},</h2>
+            <h2>Hallo ${safeFirstName},</h2>
             <p>Willkommen beim DHBW-ESC Voting-Portal!</p>
             <p>Bitte klicke auf den folgenden Link, um deine E-Mail-Adresse zu bestätigen und dein Konto zu aktivieren:</p>
             <a href="${verifyUrl}" style="padding: 10px 15px; background-color: #6a4cff; color: white; text-decoration: none; border-radius: 5px; display: inline-block; margin-top: 10px;">E-Mail bestätigen</a>

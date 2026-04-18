@@ -1,14 +1,60 @@
+// Bidirektionale Maps für Auto-Auswahl (landcode ↔ vorwahl)
+let landcodeZuVorwahl = new Map();
+let vorwahlZuLandcode = new Map();
+let erlaubteWerte = null;
+
 document.addEventListener("DOMContentLoaded", async () => {
     try {
-        const res = await fetch("/api/user/profile");
-        const data = await res.json();
+        // Profil und Länderliste parallel laden
+        const [profileRes, laenderRes] = await Promise.all([
+            fetch("/api/user/profile"),
+            fetch("/api/countries"),
+        ]);
+        const profileData = await profileRes.json();
+        const laender = await laenderRes.json();
 
-        if (!data.success) {
+        if (!profileData.success) {
             window.location.href = "/login";
             return;
         }
 
-        const p = data.profile;
+        // Dropdowns befüllen
+        const countrySelect = document.getElementById("countryCode");
+        const prefixSelect = document.getElementById("phonePrefix");
+        const laendercodes = new Set();
+        const vorwahlen = new Set();
+
+        for (const c of laender) {
+            laendercodes.add(c.landcode);
+            countrySelect.insertAdjacentHTML(
+                "beforeend",
+                `<option value="${c.landcode}">${c.country} (${c.landcode})</option>`
+            );
+            if (c.vorwahl) {
+                vorwahlen.add(c.vorwahl);
+                landcodeZuVorwahl.set(c.landcode, c.vorwahl);
+                vorwahlZuLandcode.set(c.vorwahl, c.landcode);
+                prefixSelect.insertAdjacentHTML(
+                    "beforeend",
+                    `<option value="${c.vorwahl}">${c.vorwahl} (${c.landcode})</option>`
+                );
+            }
+        }
+
+        erlaubteWerte = { laendercodes, vorwahlen };
+
+        // Auto-Auswahl: Landcode → Vorwahl
+        countrySelect.addEventListener("change", () => {
+            prefixSelect.value = landcodeZuVorwahl.get(countrySelect.value) || "";
+        });
+
+        // Auto-Auswahl: Vorwahl → Landcode
+        prefixSelect.addEventListener("change", () => {
+            countrySelect.value = vorwahlZuLandcode.get(prefixSelect.value) || "";
+        });
+
+        // Profil-Felder befüllen (nach Dropdown-Befüllung, damit Werte gesetzt werden können)
+        const p = profileData.profile;
         document.getElementById("firstName").value = p.firstName || "";
         document.getElementById("lastName").value = p.lastName || "";
         document.getElementById("email").value = p.email || "";
@@ -17,6 +63,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         document.getElementById("birthDate").value = p.birthDate || "";
         document.getElementById("gender").value = p.gender || "";
         document.getElementById("countryCode").value = p.countryCode || "";
+
     } catch (err) {
         console.error("Fehler beim Laden des Profils:", err);
     }
@@ -43,34 +90,29 @@ document.getElementById("profileForm").addEventListener("submit", async (e) => {
     const errorEl = document.getElementById("profile-error-message");
     errorEl.className = "error-msg hidden";
 
+    const firstName = document.getElementById("firstName").value.trim();
+    const lastName = document.getElementById("lastName").value.trim();
+    const email = document.getElementById("email").value.trim();
+    const phonePrefix = document.getElementById("phonePrefix").value;
+    const phoneNumber = document.getElementById("phoneNumber").value.trim();
+    const birthDate = document.getElementById("birthDate").value;
+    const gender = document.getElementById("gender").value;
+    const countryCode = document.getElementById("countryCode").value;
     const password = document.getElementById("password").value;
     const confirmPassword = document.getElementById("confirmPassword").value;
 
-    if (password && password !== confirmPassword) {
-        errorEl.textContent = "Passwörter stimmen nicht überein.";
+    const pruefung = validateUserData(
+        { firstName, lastName, email, phonePrefix, phoneNumber, birthDate, gender, countryCode, password, confirmPassword },
+        false,
+        erlaubteWerte
+    );
+    if (!pruefung.ok) {
+        errorEl.textContent = pruefung.meldung;
         errorEl.classList.remove("hidden");
         return;
     }
 
-    if (password) {
-        const passwordPattern = /^(?=.*[A-Z])(?=.*[!@#$%^&*()\-]).{8,}$/;
-        if (!passwordPattern.test(password)) {
-            errorEl.textContent = "Passwort erfüllt die Anforderungen nicht.";
-            errorEl.classList.remove("hidden");
-            return;
-        }
-    }
-
-    const payload = {
-        firstName: document.getElementById("firstName").value,
-        lastName: document.getElementById("lastName").value,
-        email: document.getElementById("email").value,
-        phonePrefix: document.getElementById("phonePrefix").value,
-        phoneNumber: document.getElementById("phoneNumber").value,
-        birthDate: document.getElementById("birthDate").value,
-        gender: document.getElementById("gender").value,
-        countryCode: document.getElementById("countryCode").value,
-    };
+    const payload = { firstName, lastName, email, phonePrefix, phoneNumber, birthDate, gender, countryCode };
     if (password) {
         payload.password = password;
         payload.confirmPassword = confirmPassword;

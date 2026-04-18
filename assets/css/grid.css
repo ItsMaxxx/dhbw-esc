@@ -7,6 +7,7 @@ the elements gets included in the total width and height of the elements.*/
 
 /*Container*/
 .grid-container {
+    background: transparent;
     display: grid;
     grid-template-columns: repeat(12, 1fr);
     /* NEU: Header/Footer nehmen nur so viel Platz wie nötig (auto),

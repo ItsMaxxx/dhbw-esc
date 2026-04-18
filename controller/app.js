@@ -10,6 +10,7 @@ import express from "express";
 import path from "path";
 import { fileURLToPath } from "url";
 import session from "express-session";
+import rateLimit from "express-rate-limit";
 import { execFileSync } from "child_process";
 // execFileSync wird genutzt, um in app.listen() Fehlerinformationen auszugeben, wenn der Port nicht frei ist
 import { styleText } from "node:util";
@@ -22,6 +23,8 @@ import {
   getViewerProfile,
   updateViewerProfile,
   deleteViewerAccount,
+  getAllCountries,
+  validateUserDataDB,
 } from "../model/authModel.js";
 
 // Importiere die Voting-Logik aus dem Model
@@ -65,6 +68,7 @@ app.use(
     resave: false, // Session wird nur neu gespeichert, wenn sich die Daten geändert haben
     saveUninitialized: false, // WICHTIG: Erstellt erst ein Cookie, wenn man explizit Daten (Login) speichert
     cookie: {
+      sameSite: 'strict', // Das blockiert Cookie-Mitschicken bei Cross-Site-Requests
       httpOnly: true, // Verhindert XSS-Angriffe via JavaScript
       secure: false, // Bei localhost auf false. Bei echtem HTTPS auf true!
       // maxAge fehlt absichtlich: Dadurch ist es ein Session-Cookie (löscht sich beim Schließen)
@@ -123,6 +127,7 @@ const jsFiles = [
   "auth.js",
   "cookie.js",
   "login.js",
+  "validate_userdata.js",
   "signup.js",
   "voting.js",
   "user.js",
@@ -235,8 +240,37 @@ app.get("/api/check-session", (req, res) => {
   }
 });
 
+// API-Endpunkt: Alle Länder mit Landcode und Vorwahl (für Dropdowns)
+app.get("/api/countries", async (req, res) => {
+  try {
+    const countries = await getAllCountries();
+    res.status(200).json(countries);
+  } catch (err) {
+    console.error(styleText("red", "Fehler beim Laden der Länder: " + err.message));
+    res.status(500).json({ success: false, message: "Länder konnten nicht geladen werden." });
+  }
+});
+
+// Max. 60 Signup-Versuche pro IP in 5 Minuten (Klassensetting: ~20 Leute, je ~3 Versuche)
+const signupLimiter = rateLimit({
+  windowMs: 5 * 60 * 1000,
+  max: 60,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, message: "Zu viele Registrierungsversuche. Bitte warte 5 Minuten." },
+});
+
+// Max. 100 Login-Versuche pro IP in 5 Minuten (Klassensetting: ~20 Leute, je ~5 Versuche)
+const loginLimiter = rateLimit({
+  windowMs: 5 * 60 * 1000,
+  max: 100,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, message: "Zu viele Login-Versuche. Bitte warte 5 Minuten." },
+});
+
 // API-Endpunkt für Signup
-app.post("/api/signup", async (req, res) => {
+app.post("/api/signup", signupLimiter, async (req, res) => {
   const {
     firstName,
     lastName,
@@ -257,59 +291,20 @@ app.post("/api/signup", async (req, res) => {
   );
 
   // Serverseitige Validierung (immer nötig, auch wenn Frontend prüft)
-  if (
-    !firstName ||
-    !lastName ||
-    !email ||
-    !countryCode ||
-    !password ||
-    !confirmPassword
-  ) {
-    console.log(
-      styleText("red", "Registrierung abgelehnt: Pflichtfelder fehlen."),
-    );
-    return res
-      .status(400)
-      .json({ success: false, message: "Bitte alle Pflichtfelder ausfüllen." });
-  }
-
-  if (password !== confirmPassword) {
-    console.log(
-      styleText(
-        "red",
-        "Registrierung abgelehnt: Passwörter stimmen nicht überein.",
-      ),
-    );
-    return res
-      .status(400)
-      .json({ success: false, message: "Passwörter stimmen nicht überein." });
-  }
-
-  const passwordPattern = /^(?=.*[A-Z])(?=.*[!@#$%^&*()\-]).{8,}$/;
-  if (!passwordPattern.test(password)) {
-    console.log(
-      styleText(
-        "red",
-        "Registrierung abgelehnt: Passwort erfüllt die Anforderungen nicht.",
-      ),
-    );
-    return res.status(400).json({
-      success: false,
-      message: "Passwort erfüllt die Anforderungen nicht.",
-    });
+  const signupValidation = await validateUserDataDB(
+    { firstName, lastName, email, phonePrefix, phoneNumber, birthDate, gender, countryCode, password, confirmPassword },
+    true
+  );
+  if (!signupValidation.valid) {
+    console.log(styleText("red", `Registrierung abgelehnt: ${signupValidation.message}`));
+    return res.status(400).json({ success: false, message: signupValidation.message });
   }
 
   if (!isOver18 || !acceptedTerms) {
-    console.log(
-      styleText(
-        "red",
-        "Registrierung abgelehnt: 18+ und Nutzungsbedingungen nicht bestätigt.",
-      ),
-    );
+    console.log(styleText("red", "Registrierung abgelehnt: 18+ und Nutzungsbedingungen nicht bestätigt."));
     return res.status(400).json({
       success: false,
-      message:
-        "Du musst mindestens 18 Jahre alt sein und die Nutzungsbedingungen akzeptieren.",
+      message: "Du musst mindestens 18 Jahre alt sein und die Nutzungsbedingungen akzeptieren.",
     });
   }
 
@@ -364,7 +359,7 @@ app.get("/api/verify", async (req, res) => {
 });
 
 // API-Endpunkt für Login
-app.post("/api/login", async (req, res) => {
+app.post("/api/login", loginLimiter, async (req, res) => {
   const { role, email, password } = req.body;
 
   console.log(
@@ -474,27 +469,12 @@ app.post("/api/user/update", async (req, res) => {
     confirmPassword,
   } = req.body;
 
-  if (!firstName || !lastName || !email || !countryCode) {
-    return res
-      .status(400)
-      .json({ success: false, message: "Bitte alle Pflichtfelder ausfüllen." });
-  }
-
-  if (password) {
-    if (password !== confirmPassword) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Passwörter stimmen nicht überein." });
-    }
-    const passwordPattern = /^(?=.*[A-Z])(?=.*[!@#$%^&*()\-]).{8,}$/;
-    if (!passwordPattern.test(password)) {
-      return res
-        .status(400)
-        .json({
-          success: false,
-          message: "Passwort erfüllt die Anforderungen nicht.",
-        });
-    }
+  const updateValidation = await validateUserDataDB(
+    { firstName, lastName, email, phonePrefix, phoneNumber, birthDate, gender, countryCode, password, confirmPassword },
+    false
+  );
+  if (!updateValidation.valid) {
+    return res.status(400).json({ success: false, message: updateValidation.message });
   }
 
   const result = await updateViewerProfile(user.id, {

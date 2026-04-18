@@ -29,13 +29,62 @@ document.querySelectorAll(".select-wrapper select").forEach((select) => {
   });
 });
 
+// Bidirektionale Maps für Auto-Auswahl (landcode ↔ vorwahl)
+let landcodeZuVorwahl = new Map();
+let vorwahlZuLandcode = new Map();
+let erlaubteWerte = null;
+
+document.addEventListener("DOMContentLoaded", async () => {
+  try {
+    const res = await fetch("/api/countries");
+    const laender = await res.json();
+
+    const countrySelect = document.getElementById("countryCode");
+    const prefixSelect = document.getElementById("phonePrefix");
+    const laendercodes = new Set();
+    const vorwahlen = new Set();
+
+    for (const c of laender) {
+      laendercodes.add(c.landcode);
+      countrySelect.insertAdjacentHTML(
+        "beforeend",
+        `<option value="${c.landcode}">${c.country} (${c.landcode})</option>`
+      );
+      if (c.vorwahl) {
+        vorwahlen.add(c.vorwahl);
+        landcodeZuVorwahl.set(c.landcode, c.vorwahl);
+        vorwahlZuLandcode.set(c.vorwahl, c.landcode);
+        prefixSelect.insertAdjacentHTML(
+          "beforeend",
+          `<option value="${c.vorwahl}">${c.vorwahl} (${c.landcode})</option>`
+        );
+      }
+    }
+
+    erlaubteWerte = { laendercodes, vorwahlen };
+
+    // Auto-Auswahl: Landcode → Vorwahl
+    countrySelect.addEventListener("change", () => {
+      prefixSelect.value = landcodeZuVorwahl.get(countrySelect.value) || "";
+    });
+
+    // Auto-Auswahl: Vorwahl → Landcode
+    prefixSelect.addEventListener("change", () => {
+      countrySelect.value = vorwahlZuLandcode.get(prefixSelect.value) || "";
+    });
+
+  } catch (err) {
+    console.error("Fehler beim Laden der Länder:", err);
+  }
+});
+
 document.getElementById("signupForm").addEventListener("submit", async (e) => {
   e.preventDefault();
 
   const firstName = document.getElementById("firstName").value.trim();
   const lastName = document.getElementById("lastName").value.trim();
   const email = document.getElementById("email").value.trim();
-  const phonePrefix = document.getElementById("phonePrefix").value.trim();
+  const phonePrefix = document.getElementById("phonePrefix").value;
   const phoneNumber = document.getElementById("phoneNumber").value.trim();
   const birthDate = document.getElementById("birthDate").value;
   const gender = document.getElementById("gender").value;
@@ -49,66 +98,36 @@ document.getElementById("signupForm").addEventListener("submit", async (e) => {
   errorMsg.classList.add("hidden");
   errorMsg.textContent = "";
 
-  // Pflichtfeld-Check
-  if (
-    !firstName ||
-    !lastName ||
-    !email ||
-    !countryCode ||
-    !password ||
-    !confirmPassword
-  ) {
-    errorMsg.textContent = "Bitte alle Pflichtfelder ausfüllen.";
-    errorMsg.classList.remove("hidden");
-    return;
-  }
-
-  // Passwort-Checks
-  const passwordPattern = /^(?=.*[A-Z])(?=.*[!@#$%^&*()\-]).{8,}$/;
-  if (!passwordPattern.test(password)) {
-    errorMsg.textContent = "Passwort erfüllt die Anforderungen nicht.";
-    errorMsg.classList.remove("hidden");
-    return;
-  }
-
-  if (password !== confirmPassword) {
-    errorMsg.textContent = "Passwörter stimmen nicht überein.";
+  const pruefung = validateUserData(
+    { firstName, lastName, email, phonePrefix, phoneNumber, birthDate, gender, countryCode, password, confirmPassword },
+    true,
+    erlaubteWerte
+  );
+  if (!pruefung.ok) {
+    errorMsg.textContent = pruefung.meldung;
     errorMsg.classList.remove("hidden");
     return;
   }
 
   if (!isOver18 || !acceptedTerms) {
-    errorMsg.textContent =
-      "Du musst mindestens 18 Jahre alt sein und die Nutzungsbedingungen akzeptieren.";
+    errorMsg.textContent = "Du musst mindestens 18 Jahre alt sein und die Nutzungsbedingungen akzeptieren.";
     errorMsg.classList.remove("hidden");
     return;
   }
 
-  // Request an Backend schicken
   try {
     const response = await fetch("/api/signup", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        firstName,
-        lastName,
-        email,
-        phonePrefix,
-        phoneNumber,
-        birthDate,
-        gender,
-        countryCode,
-        password,
-        confirmPassword,
-        isOver18,
-        acceptedTerms,
+        firstName, lastName, email, phonePrefix, phoneNumber,
+        birthDate, gender, countryCode, password, confirmPassword, isOver18, acceptedTerms,
       }),
     });
 
     const data = await response.json();
 
     if (response.ok && data.success) {
-      // Nach erfolgreicher Registrierung auf Login-Seite leiten
       window.location.href = "/login";
     } else {
       errorMsg.textContent = data.message || "Registrierung fehlgeschlagen.";

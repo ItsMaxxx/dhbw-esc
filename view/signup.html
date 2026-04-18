@@ -47,17 +47,21 @@
                     <input type="email" id="email" required>
                 </div>
 
+                <div class="input-group">
+                    <label for="countryCode">Land oder Gebiet des Wohnsitzes *</label>
+                    <div class="select-wrapper">
+                        <select id="countryCode" required>
+                            <option value="">Bitte wählen</option>
+                        </select>
+                    </div>
+                </div>
+
                 <div class="two-cols">
                     <div class="input-group">
                         <label for="phonePrefix">Vorwahl</label>
                         <div class="select-wrapper">
                             <select id="phonePrefix">
                                 <option value="">Bitte wählen</option>
-                                <option value="+49">+49 (DE)</option>
-                                <option value="+33">+33 (FR)</option>
-                                <option value="+44">+44 (UK)</option>
-                                <option value="+39">+39 (IT)</option>
-                                <option value="+34">+34 (ES)</option>
                             </select>
                         </div>
                     </div>
@@ -85,30 +89,14 @@
                     </div>
                 </div>
 
-                <div class="input-group">
-                    <label for="countryCode">Land oder Gebiet des Wohnsitzes *</label>
-                    <div class="select-wrapper">
-                        <select id="countryCode" required>
-                            <option value="">Bitte wählen</option>
-                            <option value="DE">Deutschland (DE)</option>
-                            <option value="FR">Frankreich (FR)</option>
-                            <option value="IE">Irland (IE)</option>
-                            <option value="ES">Spanien (ES)</option>
-                            <option value="IT">Italien (IT)</option>
-                            <option value="SE">Schweden (SE)</option>
-                            <option value="UK">Vereinigtes Königreich (UK)</option>
-                        </select>
-                    </div>
-                </div>
-
                 <div class="two-cols">
                     <div class="input-group">
                         <label for="password">Passwort *</label>
-                        <input type="password" id="password" required placeholder="Mind. 8 Zeichen, 1 Großbuchstabe, 1 Sonderzeichen">
+                        <input type="password" id="password" required placeholder="Beachte die Regeln">
                     </div>
                     <div class="input-group">
                         <label for="confirmPassword">Passwort bestätigen *</label>
-                        <input type="password" id="confirmPassword" required>
+                        <input type="password" id="confirmPassword" required placeholder="Identisch zu Passwort">
                     </div>
                 </div>
 
@@ -142,6 +130,7 @@
 </div>
 
 <script src="/js/cookie.js"></script>
+<script src="/js/validate_userdata.js"></script>
 <script src="/js/signup.js"></script>
 </body>
 </html>

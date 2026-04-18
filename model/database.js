@@ -23,7 +23,7 @@ export const getJuryUser = (email, password) => {
     return new Promise((resolve, reject) => {
         console.log(styleText("blue", `DB-Abfrage für Jury-Login gestartet: E-Mail = ${email}`));
 
-        const query = `SELECT country FROM jury_login_data WHERE jury_mail = ? AND password = ?`;
+        const query = `SELECT country FROM login_data_jury WHERE jury_mail = ? AND password = ?`;
 
         db.get(query, [email, password], (err, row) => {
             if (err) {
@@ -46,7 +46,7 @@ export const getViewerUser = (email, password) => {
     return new Promise((resolve, reject) => {
         console.log(styleText("blue", `DB-Abfrage für Viewer-Login gestartet: ${email}`));
 
-        const query = `SELECT id, first_name, last_name, email, country_code FROM viewer_users WHERE email = ? AND password = ?`;
+        const query = `SELECT id, first_name, last_name, email, country_code FROM login_data_user WHERE email = ? AND password = ?`;
 
         db.get(query, [email, password], (err, row) => {
             if (err) {
@@ -68,7 +68,7 @@ export const getViewerUser = (email, password) => {
 export const getViewerByEmailForLogin = (email) => {
     return new Promise((resolve, reject) => {
         console.log(styleText("blue", `DB-Abfrage für Viewer-Login (Suche nach Hash): ${email}`));
-        const query = `SELECT id, first_name, last_name, email, country_code, password, is_verified FROM viewer_users WHERE email = ?`;
+        const query = `SELECT id, first_name, last_name, email, country_code, password, is_verified FROM login_data_user WHERE email = ?`;
         db.get(query, [email], (err, row) => {
             if (err) reject(err);
             else resolve(row);
@@ -81,7 +81,7 @@ export const createViewerUser = (userData, hashedPassword, verifyToken) => {
     return new Promise((resolve, reject) => {
         // is_verified fix auf 0
         const query = `
-            INSERT INTO viewer_users
+            INSERT INTO login_data_user
             (first_name, last_name, email, phone_prefix, phone_number, birth_date, gender, country_code, password, is_over_18, accepted_terms, is_verified, verify_token)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?)
         `;
@@ -103,7 +103,7 @@ export const createViewerUser = (userData, hashedPassword, verifyToken) => {
 // NEU: User über Token suchen
 export const getViewerByToken = (token) => {
     return new Promise((resolve, reject) => {
-        const query = `SELECT id, email FROM viewer_users WHERE verify_token = ?`;
+        const query = `SELECT id, email FROM login_data_user WHERE verify_token = ?`;
         db.get(query, [token], (err, row) => {
             if (err) reject(err);
             else resolve(row);
@@ -114,7 +114,7 @@ export const getViewerByToken = (token) => {
 // NEU: Account aktivieren
 export const verifyViewerAccount = (userId) => {
     return new Promise((resolve, reject) => {
-        const query = `UPDATE viewer_users SET is_verified = 1, verify_token = NULL WHERE id = ?`;
+        const query = `UPDATE login_data_user SET is_verified = 1, verify_token = NULL WHERE id = ?`;
         db.run(query, [userId], function(err) {
             if (err) reject(err);
             else resolve(true);
@@ -125,7 +125,7 @@ export const verifyViewerAccount = (userId) => {
 // Query: Viewer-Profil anhand ID laden
 export const getViewerById = (id) => {
     return new Promise((resolve, reject) => {
-        const query = `SELECT id, first_name, last_name, email, phone_prefix, phone_number, birth_date, gender, country_code FROM viewer_users WHERE id = ?`;
+        const query = `SELECT id, first_name, last_name, email, phone_prefix, phone_number, birth_date, gender, country_code FROM login_data_user WHERE id = ?`;
         db.get(query, [id], (err, row) => {
             if (err) reject(err); else resolve(row);
         });
@@ -137,10 +137,10 @@ export const updateViewerUser = (id, data, hashedPassword) => {
     return new Promise((resolve, reject) => {
         let query, params;
         if (hashedPassword) {
-            query = `UPDATE viewer_users SET first_name=?, last_name=?, email=?, phone_prefix=?, phone_number=?, birth_date=?, gender=?, country_code=?, password=? WHERE id=?`;
+            query = `UPDATE login_data_user SET first_name=?, last_name=?, email=?, phone_prefix=?, phone_number=?, birth_date=?, gender=?, country_code=?, password=? WHERE id=?`;
             params = [data.firstName, data.lastName, data.email, data.phonePrefix || null, data.phoneNumber || null, data.birthDate || null, data.gender || null, data.countryCode, hashedPassword, id];
         } else {
-            query = `UPDATE viewer_users SET first_name=?, last_name=?, email=?, phone_prefix=?, phone_number=?, birth_date=?, gender=?, country_code=? WHERE id=?`;
+            query = `UPDATE login_data_user SET first_name=?, last_name=?, email=?, phone_prefix=?, phone_number=?, birth_date=?, gender=?, country_code=? WHERE id=?`;
             params = [data.firstName, data.lastName, data.email, data.phonePrefix || null, data.phoneNumber || null, data.birthDate || null, data.gender || null, data.countryCode, id];
         }
         db.run(query, params, function(err) {
@@ -188,7 +188,7 @@ export const getCountryByLandcode = (landcode) => {
 // Query: Alle Viewer-Votes eines Users löschen (Überschreiben bei erneuter Abgabe)
 export const deleteViewerVotes = (viewerId) => {
     return new Promise((resolve, reject) => {
-        db.run(`DELETE FROM viewer_vote WHERE viewer_id = ?`, [viewerId], function (err) {
+        db.run(`DELETE FROM vote_user WHERE viewer_id = ?`, [viewerId], function (err) {
             if (err) reject(err); else resolve(this.changes);
         });
     });
@@ -198,7 +198,7 @@ export const deleteViewerVotes = (viewerId) => {
 export const insertViewerVote = (viewerId, singerId, points) => {
     return new Promise((resolve, reject) => {
         db.run(
-            `INSERT INTO viewer_vote (viewer_id, singer_id, points) VALUES (?, ?, ?)`,
+            `INSERT INTO vote_user (viewer_id, singer_id, points) VALUES (?, ?, ?)`,
             [viewerId, singerId, points],
             function (err) { if (err) reject(err); else resolve(this.lastID); }
         );
@@ -208,7 +208,7 @@ export const insertViewerVote = (viewerId, singerId, points) => {
 // Query: Alle Jury-Votes eines Jury-Landes löschen
 export const deleteJuryVotes = (juryCountry) => {
     return new Promise((resolve, reject) => {
-        db.run(`DELETE FROM jury_vote WHERE jury_country = ?`, [juryCountry], function (err) {
+        db.run(`DELETE FROM vote_jury WHERE jury_country = ?`, [juryCountry], function (err) {
             if (err) reject(err); else resolve(this.changes);
         });
     });
@@ -218,7 +218,7 @@ export const deleteJuryVotes = (juryCountry) => {
 export const insertJuryVote = (juryCountry, singerId, points) => {
     return new Promise((resolve, reject) => {
         db.run(
-            `INSERT INTO jury_vote (jury_country, singer_id, points) VALUES (?, ?, ?)`,
+            `INSERT INTO vote_jury (jury_country, singer_id, points) VALUES (?, ?, ?)`,
             [juryCountry, singerId, points],
             function (err) { if (err) reject(err); else resolve(this.lastID); }
         );
@@ -234,8 +234,8 @@ export const getViewerVoteSumsPerCountry = () => {
                 u.country_code AS voting_country,
                 v.singer_id    AS singer_id,
                 SUM(v.points)  AS total_raw_points
-            FROM viewer_vote v
-            JOIN viewer_users u ON v.viewer_id = u.id
+            FROM vote_user v
+            JOIN login_data_user u ON v.viewer_id = u.id
             GROUP BY u.country_code, v.singer_id
         `;
         db.all(query, [], (err, rows) => {
@@ -247,9 +247,9 @@ export const getViewerVoteSumsPerCountry = () => {
 // Query: Alle Votes löschen (Viewer + Jury)
 export const deleteAllVotes = () => {
     return new Promise((resolve, reject) => {
-        db.run(`DELETE FROM viewer_vote`, [], (err) => {
+        db.run(`DELETE FROM vote_user`, [], (err) => {
             if (err) return reject(err);
-            db.run(`DELETE FROM jury_vote`, [], (err2) => {
+            db.run(`DELETE FROM vote_jury`, [], (err2) => {
                 if (err2) reject(err2); else resolve(true);
             });
         });
@@ -259,11 +259,38 @@ export const deleteAllVotes = () => {
 // Query: Viewer-Account und zugehörige Votes löschen
 export const deleteViewerUser = (id) => {
     return new Promise((resolve, reject) => {
-        db.run(`DELETE FROM viewer_vote WHERE viewer_id = ?`, [id], (err) => {
+        db.run(`DELETE FROM vote_user WHERE viewer_id = ?`, [id], (err) => {
             if (err) return reject(err);
-            db.run(`DELETE FROM viewer_users WHERE id = ?`, [id], function (err2) {
+            db.run(`DELETE FROM login_data_user WHERE id = ?`, [id], function (err2) {
                 if (err2) reject(err2); else resolve(this.changes);
             });
+        });
+    });
+};
+
+// Query: Alle Länder mit Landcode und Vorwahl (für Dropdown-Befüllung und Validierung)
+export const getAllCountries = () => {
+    return new Promise((resolve, reject) => {
+        db.all(`SELECT id, landcode, country, vorwahl FROM country ORDER BY country ASC`, [], (err, rows) => {
+            if (err) reject(err); else resolve(rows || []);
+        });
+    });
+};
+
+// Query: Prüfen ob ein Landcode in der DB existiert
+export const countryCodeExists = (landcode) => {
+    return new Promise((resolve, reject) => {
+        db.get(`SELECT id FROM country WHERE landcode = ?`, [landcode], (err, row) => {
+            if (err) reject(err); else resolve(!!row);
+        });
+    });
+};
+
+// Query: Prüfen ob eine Vorwahl in der DB existiert
+export const vorwahlExists = (vorwahl) => {
+    return new Promise((resolve, reject) => {
+        db.get(`SELECT id FROM country WHERE vorwahl = ?`, [vorwahl], (err, row) => {
+            if (err) reject(err); else resolve(!!row);
         });
     });
 };
@@ -273,7 +300,7 @@ export const getJuryPointsPerSinger = () => {
     return new Promise((resolve, reject) => {
         const query = `
             SELECT singer_id, SUM(points) AS jury_points
-            FROM jury_vote
+            FROM vote_jury
             GROUP BY singer_id
         `;
         db.all(query, [], (err, rows) => {

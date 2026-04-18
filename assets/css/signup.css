@@ -19,12 +19,15 @@
 }
 
 .input-group input {
+    width: 100%;
+    box-sizing: border-box;
     padding: 0.8rem;
     border-radius: 5px;
     border: 1px solid rgba(255, 255, 255, 0.3);
     background: rgba(255, 255, 255, 0.15);
     color: white;
     font-size: 1rem;
+    line-height: 1.2;
     outline: none;
     backdrop-filter: blur(4px);
 }
@@ -43,18 +46,20 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 }
 
 .input-group select {
+    width: 100%;
+    box-sizing: border-box;
     padding: 0.8rem;
     border-radius: 5px;
     border: 1px solid rgba(255, 255, 255, 0.3);
     background: rgba(255, 255, 255, 0.15);
     color: white;
     font-size: 1rem;
+    line-height: 1.2;
     outline: none;
     appearance: none;
     -webkit-appearance: none;
     cursor: pointer;
     backdrop-filter: blur(4px);
-    width: 100%;
 }
 
 .input-group select option {

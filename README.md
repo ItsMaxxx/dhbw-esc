@@ -28,11 +28,15 @@ Ein vollständiges Abstimmungsportal für den DHBW-internen Eurovision Cat Conte
 |---------|-------------|
 | **Viewer-Registrierung** | Selbstregistrierung mit E-Mail-Verifizierung und bcrypt-Passwort-Hashing |
 | **Rollen-Login** | Getrennte Logins für Viewer, Jury und Admin |
+| **Viewer-Profil** | Eingeloggte Viewer können Profildaten (Name, E-Mail, Telefon, Geburtsdatum, Geschlecht, Land) einsehen, ändern und den Account löschen |
 | **Viewer-Voting** | Freie Verteilung von bis zu 20 Punkten auf beliebig viele Sänger (kein eigenes Land) |
 | **Jury-Voting** | Klassisches ESC-Schema: einmalige Vergabe von 1–8, 10 und 12 Punkten |
 | **Admin-Steuerung** | Voting starten, Ergebnisse freigeben, Status zurücksetzen, alle Votes löschen |
 | **Echtzeit-Updates** | Server-Sent Events (SSE) – alle Clients werden sofort über Statusänderungen informiert |
 | **Ergebnisberechnung** | Viewer-Rohstimmen werden pro Herkunftsland in ESC-Punkte (12/10/8/…/1) umgerechnet und mit den Jury-Punkten summiert |
+| **Doppelte Validierung** | Alle Formulareingaben werden client- und serverseitig geprüft (Format, Länge, DB-Whitelist für Land und Vorwahl) |
+| **Auto-Auswahl Landcode↔Vorwahl** | Im Signup- und Profilformular wird bei Wahl eines Landes automatisch die passende Telefonvorwahl gesetzt – und umgekehrt |
+| **Rate Limiting** | Login- und Signup-Endpunkte sind gegen Brute-Force geschützt (max. 100 bzw. 60 Versuche pro IP / 5 Minuten) |
 
 ---
 
@@ -154,7 +158,14 @@ dhbw-esc/
 │   │   └── *.png                # Logo und weitere Bilder
 │   └── js/                      # Client-seitiges JavaScript (auth, voting, …)
 ├── controller/
-│   └── app.js                   # Express-Server – Routen, Middleware, API-Endpunkte
+│   ├── app.js                   # Express-Server – Routen, Middleware, API-Endpunkte
+│   ├── auth.js                  # Client-JS: Session-Check und Weiterleitungslogik
+│   ├── cookie.js                # Client-JS: Cookie-Banner-Steuerung
+│   ├── login.js                 # Client-JS: Login-Formular
+│   ├── signup.js                # Client-JS: Signup-Formular inkl. Dropdown-Befüllung und Auto-Auswahl
+│   ├── user.js                  # Client-JS: Profil laden, bearbeiten, Account löschen
+│   ├── validate_userdata.js     # Client-JS: Gemeinsame Eingabevalidierung (Signup & Profil)
+│   └── voting.js                # Client-JS: Voting-Oberfläche und SSE-Listener
 ├── model/
 │   ├── authModel.js             # Registrierung, Login, E-Mail-Verifizierung
 │   ├── database.js              # Alle SQLite-Datenbankabfragen
@@ -245,6 +256,7 @@ Die Gesamtpunktzahl eines Sängers setzt sich zusammen aus:
 | Methode | Route | Beschreibung |
 |---------|-------|-------------|
 | `GET` | `/api/check-session` | Prüft, ob eine aktive Session vorhanden ist |
+| `GET` | `/api/countries` | Alle Länder mit Landcode und Vorwahl (für Dropdowns und Whitelist-Validierung) |
 | `POST` | `/api/signup` | Neuen Viewer-Account registrieren |
 | `GET` | `/api/verify?token=<token>` | E-Mail-Adresse verifizieren und Account freischalten |
 | `POST` | `/api/login` | Einloggen (Viewer, Jury oder Admin) |
@@ -294,4 +306,5 @@ Alle Admin-Endpunkte erfordern eine aktive Session mit `role = "admin"`.
 | [bcrypt](https://github.com/kelektiv/node.bcrypt.js) | Passwort-Hashing |
 | [nodemailer](https://nodemailer.com) | E-Mail-Versand |
 | [dotenv](https://github.com/motdotla/dotenv) | Umgebungsvariablen |
+| [express-rate-limit](https://github.com/express-rate-limit/express-rate-limit) | Rate Limiting auf Login- und Signup-Endpunkten |
 | SSE (native) | Echtzeit-Push vom Server an alle Clients |
