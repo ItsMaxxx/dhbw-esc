@@ -127,6 +127,17 @@ export const submitJuryVotes = async (juryCountry, rawVotes) => {
             return { success: false, message: "Bitte vergib mindestens eine Bewertung." };
         }
 
+        // Sperre für das eigene Land (Jury-Country ist der Ländername, z.B. "Germany")
+        const singers = await getAllSingers();
+        const ownSingerIds = new Set(
+            singers.filter(s => s.country === juryCountry).map(s => s.singer_id)
+        );
+        for (const v of cleaned) {
+            if (ownSingerIds.has(v.singerId)) {
+                return { success: false, message: "Du kannst nicht für dein eigenes Land abstimmen." };
+            }
+        }
+
         await deleteJuryVotes(juryCountry);
         for (const v of cleaned) {
             await insertJuryVote(juryCountry, v.singerId, v.points);

@@ -48,7 +48,7 @@
                         <div class="sidebar-card">
                             <span class="sidebar-card-label">Posted on</span>
                             <span class="sidebar-card-date">April 19, 2026</span>
-                            <span class="sidebar-card-reading">5 min read</span>
+                            <span class="sidebar-card-reading">2 min read</span>
                         </div>
                         <div class="sidebar-card">
                             <span class="sidebar-card-label">In this article</span>
@@ -57,9 +57,9 @@
                         <div class="sidebar-card">
                             <span class="sidebar-card-label">Share this story</span>
                             <div class="share-buttons">
-                                <a href="#" class="share-btn" title="Share on X">𝕏</a>
-                                <a href="#" class="share-btn" title="Share on Facebook">f</a>
-                                <a href="#" class="share-btn" title="Share on WhatsApp">W</a>
+                                <a href="#" class="share-btn" title="Share on X" target="_blank" onclick="this.href='https://x.com/intent/tweet?url='+encodeURIComponent(window.location.href)">𝕏</a>
+                                <a href="#" class="share-btn" title="Share on Facebook" target="_blank" onclick="this.href='https://www.facebook.com/sharer/sharer.php?u='+encodeURIComponent(window.location.href)">f</a>
+                                <a href="#" class="share-btn" title="Share on LinkedIn" target="_blank" onclick="this.href='https://www.linkedin.com/sharing/share-offsite/?url='+encodeURIComponent(window.location.href)">in</a>
                                 <a href="#" class="share-btn" title="Copy link" onclick="navigator.clipboard.writeText(window.location.href); return false;">⎘</a>
                             </div>
                         </div>
@@ -72,28 +72,29 @@
 
                         <div class="article-hero-wrap">
                             <img
-                                src="/assets/images/news/vienna-week.jpg"
+                                src="/assets/images/news/vienna_weeks.png"
                                 alt="Person holding an Austrian flag in a city street"
                                 onerror="this.style.display='none'"
                             />
                         </div>
-                        <p class="article-caption">Person holding an Austrian flag in a city street</p>
+                        <p class="article-caption">A Cat in Vienna's city center with the Austrian flag before show week</p>
 
                         <div class="article-body">
                             <p>
-                                Vienna is the perfect Eurovision city for fans who want more than just the live
-                                shows. Between elegant streets, music history and countless places to meet other
-                                visitors, the city gives every contest week a special atmosphere.
+                                Vienna is the perfect Cat Contest city for fans who want more than just the live shows.
+                                Austria's own Kätzchen Mozart is playing on every café radio this week, and Meow bei Nacht has already become
+                                the unofficial anthem of the Prater district.
+                                Start your day at the fan village near the Rathaus — meet & greets with Tommy and Édith Miauf are scheduled
+                                for the first two afternoons, and rumor has it Måneschnurr will drop in for a surprise acoustic set. If you
+                                spot a cat outside happily chomping on grass, don’t worry — it’s just doing its pre-show salad course.
                             </p>
                             <p>
-                                Start with daytime exploring, then shift into the evening rhythm of watch parties,
-                                themed bars and spontaneous fan gatherings. Even a simple walk through the center
-                                feels different when flags, playlists and ESC conversations are everywhere.
-                            </p>
-                            <p>
-                                If you're planning your week, balance the big headline events with time to wander,
-                                eat well and follow the buzz. The best Eurovision trips usually come from a mix of
-                                scheduling and happy detours.
+                                Cat-friendly cafés around the 1st district are running themed menus
+                                (yes, including a "Tea and Tuna" special in honor of Sir Whiskers).
+                                In the evenings, shift into the watch-party rhythm. Most bars will be streaming the semifinals,
+                                and the official fan zone hosts a short pre-show set with Gato Fuego before the live broadcast begins.
+                                Balance the headline events with time to wander — the best Cat Contest memories usually come from the
+                                detours between them, or from the cat that decided the lawn was the real green room.
                             </p>
                         </div>
                     </main>
@@ -102,38 +103,10 @@
             </div>
 
             <!-- Footer -->
-            <div class="footer">
-                <section class="footer-partners">
-                    <p>Partners</p>
-                </section>
-                <div class="footer-content-wrapper">
-                    <div class="footer-section footer-logo">
-                        <img
-                            src="/assets/images/Eurovision_Cat_Contest_Logo_New.png"
-                            alt="ESC Cat Logo"
-                            class="footer-logo"
-                        />
-                    </div>
-                    <div class="footer-section legal-links">
-                        <h4>Rechtliches &amp; Sicherheit</h4>
-                        <ul>
-                            <li><a href="/impressum">Impressum</a></li>
-                            <li><a href="/datenschutz">Datenschutzerklärung</a></li>
-                            <li><a href="/cookie-richtlinie">Cookies</a></li>
-                            <li><a href="/agb">AGB</a></li>
-                        </ul>
-                    </div>
-                    <div class="footer-section contact-info">
-                        <h4>Contact</h4>
-                        <p>Eurovision Cat Contest</p>
-                        <p>Lucas-Cranach Str. 4</p>
-                        <p>68163 Mannheim</p>
-                        <p>E-Mail: schmelzer2040@gmail.com</p>
-                    </div>
-                </div>
-            </div>
+            <div class="footer"></div>
 
         </div>
         <script src="/js/auth.js"></script>
+        <script src="/js/footer.js"></script>
     </body>
 </html>

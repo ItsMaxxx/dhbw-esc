@@ -126,6 +126,8 @@ app.use(
 const jsFiles = [
   "auth.js",
   "cookie.js",
+  "footer.js",
+  "news-cards.js",
   "login.js",
   "validate_userdata.js",
   "signup.js",
@@ -197,34 +199,24 @@ app.get("/user", (req, res) => {
   res.status(200).sendFile(path.join(__dirname, "../view/user.html"));
 });
 
-app.get("/news/vienna-watch-alongs-2026", (req, res) => {
-  logClientInfo(req);
-  res
-    .status(200)
-    .sendFile(
-      path.join(__dirname, "../view/news/vienna-watch-alongs-2026.html"),
-    );
-});
-
-app.get("/news/non-stop-hits-2026", (req, res) => {
-  logClientInfo(req);
-  res
-    .status(200)
-    .sendFile(path.join(__dirname, "../view/news/non-stop-hits-2026.html"));
-});
-
-app.get("/news/vienna-guide-2026", (req, res) => {
-  logClientInfo(req);
-  res
-    .status(200)
-    .sendFile(path.join(__dirname, "../view/news/vienna-guide-2026.html"));
-});
-
-app.get("/news/fan-predictions-2026", (req, res) => {
-  logClientInfo(req);
-  res
-    .status(200)
-    .sendFile(path.join(__dirname, "../view/news/fan-predictions-2026.html"));
+// News-Artikel als statische HTML-Dateien ausliefern
+const newsSlugs = [
+  "vienna-watch-alongs-2026",
+  "non-stop-hits-2026",
+  "vienna-guide-2026",
+  "fan-favorites-2026",
+  "community-picks-2026",
+  "behind-the-votes-2026",
+];
+newsSlugs.forEach((slug) => {
+  const handler = (req, res) => {
+    logClientInfo(req);
+    res
+      .status(200)
+      .sendFile(path.join(__dirname, `../view/news/${slug}.html`));
+  };
+  app.get(`/news/${slug}`, handler);
+  app.get(`/news/${slug}.html`, (req, res) => res.redirect(301, `/news/${slug}`));
 });
 
 //

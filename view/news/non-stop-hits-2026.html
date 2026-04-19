@@ -57,9 +57,9 @@
                         <div class="sidebar-card">
                             <span class="sidebar-card-label">Share this story</span>
                             <div class="share-buttons">
-                                <a href="#" class="share-btn" title="Share on X">𝕏</a>
-                                <a href="#" class="share-btn" title="Share on Facebook">f</a>
-                                <a href="#" class="share-btn" title="Share on WhatsApp">W</a>
+                                <a href="#" class="share-btn" title="Share on X" target="_blank" onclick="this.href='https://x.com/intent/tweet?url='+encodeURIComponent(window.location.href)">𝕏</a>
+                                <a href="#" class="share-btn" title="Share on Facebook" target="_blank" onclick="this.href='https://www.facebook.com/sharer/sharer.php?u='+encodeURIComponent(window.location.href)">f</a>
+                                <a href="#" class="share-btn" title="Share on LinkedIn" target="_blank" onclick="this.href='https://www.linkedin.com/sharing/share-offsite/?url='+encodeURIComponent(window.location.href)">in</a>
                                 <a href="#" class="share-btn" title="Copy link" onclick="navigator.clipboard.writeText(window.location.href); return false;">⎘</a>
                             </div>
                         </div>
@@ -72,28 +72,29 @@
 
                         <div class="article-hero-wrap">
                             <img
-                                src="/assets/images/news/non-stop-hits.jpg"
+                                src="/assets/images/news/non_stop_hits.png"
                                 alt="Bright Eurovision-style heart graphic with playlist artwork"
                                 onerror="this.style.display='none'"
                             />
                         </div>
-                        <p class="article-caption">Bright Eurovision-style heart graphic with playlist artwork</p>
+                        <p class="article-caption">Two Cats fighting for their favorite Singers!</p>
 
                         <div class="article-body">
                             <p>
-                                Our Eurovision playlist is back with a fresh selection of high-energy anthems,
-                                dramatic ballads and addictive pop hooks. It is built for fans who want the contest
-                                feeling on repeat, whether they are working, traveling or getting ready for the
-                                live shows.
+                                The official Cat Contest 2026 playlist is back, and every single entry from this year's lineup is in there
+                                — from Tommy's stadium-ready Schnurr für Deutschland to Édith Miauf's heart-wrenching Je ne regrette purr.
+                                It is built for fans who want the contest feeling on repeat, no matter what they are doing.
                             </p>
                             <p>
-                                The updated mix moves across eras and moods without losing momentum. You'll hear
-                                well-known classics, recent fan obsessions and a few rediscoveries that deserve a
-                                second life in every ESC rotation.
+                                And yes, the cover image with two cats going at it says it all: these hits really are back, and they are
+                                definitely not keeping it calm.The mix moves between moods without losing momentum.
+                                Gato Fuego brings the heat with Fiesta Felina, Duncan Pawrence slows it down with Arcade
+                                (Red Dot Chaser), and Ailuros Olympia cranks the tempo back up with Opa, Katze!. Between the anthems,
+                                quieter moments like Salvador Schnurral's Amar pelos dois give your ears — and probably your cat — a chance to recover.
                             </p>
                             <p>
-                                Hit play and keep the Eurovision spirit running all week. This is the kind of
-                                playlist that turns one song into twenty and a quick listen into a full evening.
+                                Hit play and keep the contest spirit running all week. Fair warning: Johnny Miaugan's Hold Me Meow has a
+                                habit of getting stuck in everyone's head for days.
                             </p>
                         </div>
                     </main>
@@ -102,38 +103,10 @@
             </div>
 
             <!-- Footer -->
-            <div class="footer">
-                <section class="footer-partners">
-                    <p>Partners</p>
-                </section>
-                <div class="footer-content-wrapper">
-                    <div class="footer-section footer-logo">
-                        <img
-                            src="/assets/images/Eurovision_Cat_Contest_Logo_New.png"
-                            alt="ESC Cat Logo"
-                            class="footer-logo"
-                        />
-                    </div>
-                    <div class="footer-section legal-links">
-                        <h4>Rechtliches &amp; Sicherheit</h4>
-                        <ul>
-                            <li><a href="/impressum">Impressum</a></li>
-                            <li><a href="/datenschutz">Datenschutzerklärung</a></li>
-                            <li><a href="/cookie-richtlinie">Cookies</a></li>
-                            <li><a href="/agb">AGB</a></li>
-                        </ul>
-                    </div>
-                    <div class="footer-section contact-info">
-                        <h4>Contact</h4>
-                        <p>Eurovision Cat Contest</p>
-                        <p>Lucas-Cranach Str. 4</p>
-                        <p>68163 Mannheim</p>
-                        <p>E-Mail: schmelzer2040@gmail.com</p>
-                    </div>
-                </div>
-            </div>
+            <div class="footer"></div>
 
         </div>
         <script src="/js/auth.js"></script>
+        <script src="/js/footer.js"></script>
     </body>
 </html>

@@ -222,7 +222,7 @@ dhbw-esc/
 │   │   ├── vienna-watch-alongs-2026.html
 │   │   ├── non-stop-hits-2026.html
 │   │   ├── vienna-guide-2026.html
-│   │   └── fan-predictions-2026.html
+│   │   └── fan-favorites-2026.html
 │   └── rechtliches/             # Impressum, Datenschutz, AGB, Cookie-Richtlinie
 ├── .env                         # Umgebungsvariablen (nicht versioniert)
 ├── CLAUDE.md                    # Hinweise für Claude Code
@@ -299,7 +299,7 @@ Die Gesamtpunktzahl eines Sängers setzt sich zusammen aus:
 | `GET /news/vienna-watch-alongs-2026` | News-Artikel |
 | `GET /news/non-stop-hits-2026` | News-Artikel |
 | `GET /news/vienna-guide-2026` | News-Artikel |
-| `GET /news/fan-predictions-2026` | News-Artikel |
+| `GET /news/fan-favorites-2026` | News-Artikel |
 
 ### Auth-API
 

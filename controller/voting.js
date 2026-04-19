@@ -150,10 +150,17 @@ function renderVotingTab() {
         document.getElementById("voting-title").textContent =
             `Jury-Voting (${session.user.country || ""})`;
         document.getElementById("voting-info").textContent =
-            "Vergib ESC-Punkte: 1-8, 10, 12. Jeder Punktewert darf nur einmal vergeben werden.";
+            `Vergib ESC-Punkte: 1-8, 10, 12. Jeder Punktewert darf nur einmal vergeben werden. Für dein eigenes Land (${session.user.country || "-"}) kannst du nicht abstimmen.`;
         document.querySelector(".vote-counter").classList.add("hidden");
 
-        for (const s of singers) list.appendChild(buildJuryRow(s));
+        for (const s of singers) {
+            const isOwn =
+                session.user.country &&
+                s.country &&
+                session.user.country.toString().toUpperCase() ===
+                    s.country.toString().toUpperCase();
+            list.appendChild(buildJuryRow(s, isOwn));
+        }
         updateJuryValidation();
     } else {
         loginRequired.classList.remove("hidden");
@@ -169,6 +176,7 @@ function buildReadOnlyRow(singer) {
     return li;
 }
 
+//Für User die Tabelle bauen
 function buildViewerRow(singer, isOwn) {
     const li = document.createElement("li");
     li.className = "singer-row" + (isOwn ? " disabled" : "");
@@ -184,6 +192,7 @@ function buildViewerRow(singer, isOwn) {
             `
         }</div>`;
 
+    // Event listeners für die + & - Buttons und das Eingabefeld
     if (!isOwn) {
         const input = li.querySelector(".vote-input");
         li.querySelector(".minus").addEventListener("click", () =>
@@ -199,24 +208,28 @@ function buildViewerRow(singer, isOwn) {
     return li;
 }
 
-function buildJuryRow(singer) {
+function buildJuryRow(singer, isOwn) {
     const li = document.createElement("li");
-    li.className = "singer-row";
+    li.className = "singer-row" + (isOwn ? " disabled" : "");
     const options = [12, 10, 8, 7, 6, 5, 4, 3, 2, 1]
         .map((p) => `<option value="${p}">${p}</option>`)
         .join("");
     li.innerHTML =
         baseRowHtml(singer) +
-        `<div class="vote-controls">
-            <select class="jury-select" data-singer-id="${singer.singer_id}">
+        `<div class="vote-controls">${
+            isOwn
+                ? '<span class="own-country">dein Land</span>'
+                : `<select class="jury-select" data-singer-id="${singer.singer_id}">
                 <option value="">-</option>
                 ${options}
-            </select>
-        </div>`;
-    li.querySelector(".jury-select").addEventListener(
-        "change",
-        updateJuryValidation,
-    );
+            </select>`
+        }</div>`;
+    if (!isOwn) {
+        li.querySelector(".jury-select").addEventListener(
+            "change",
+            updateJuryValidation,
+        );
+    }
     return li;
 }
 
