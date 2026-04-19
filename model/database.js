@@ -14,6 +14,26 @@ const db = new sqlite3.Database(dbPath, sqlite3.OPEN_READWRITE, (err) => {
     console.error(styleText("red","Fehler bei der Verbindung zur SQLite-Datenbank: " + err.message));
   } else {
     console.log(styleText("green","Stabile SQLite-Verbindung zur existierenden esc-database.db hergestellt!"));
+    // Idempotente Migration: Spalten für Passwort-Reset anlegen, falls noch nicht vorhanden
+    db.all(`PRAGMA table_info(login_data_user)`, [], (pragmaErr, columns) => {
+      if (pragmaErr) {
+        console.error(styleText("red", "Fehler bei PRAGMA table_info: " + pragmaErr.message));
+        return;
+      }
+      const columnNames = columns.map((c) => c.name);
+      if (!columnNames.includes("reset_token")) {
+        db.run(`ALTER TABLE login_data_user ADD COLUMN reset_token TEXT`, (e) => {
+          if (e) console.error(styleText("red", "Fehler beim Hinzufügen von reset_token: " + e.message));
+          else console.log(styleText("green", "Spalte reset_token zu login_data_user hinzugefügt."));
+        });
+      }
+      if (!columnNames.includes("reset_token_expiry")) {
+        db.run(`ALTER TABLE login_data_user ADD COLUMN reset_token_expiry INTEGER`, (e) => {
+          if (e) console.error(styleText("red", "Fehler beim Hinzufügen von reset_token_expiry: " + e.message));
+          else console.log(styleText("green", "Spalte reset_token_expiry zu login_data_user hinzugefügt."));
+        });
+      }
+    });
   }
 });
 
@@ -268,6 +288,36 @@ export const vorwahlExists = (vorwahl) => {
     return new Promise((resolve, reject) => {
         db.get(`SELECT id FROM country WHERE vorwahl = ?`, [vorwahl], (err, row) => {
             if (err) reject(err); else resolve(!!row);
+        });
+    });
+};
+
+// Query: Reset-Token für einen Viewer (per E-Mail) setzen, inkl. Ablaufzeit (Unix-ms)
+export const setResetToken = (email, token, expiry) => {
+    return new Promise((resolve, reject) => {
+        const query = `UPDATE login_data_user SET reset_token = ?, reset_token_expiry = ? WHERE email = ? AND is_verified = 1`;
+        db.run(query, [token, expiry, email], function (err) {
+            if (err) reject(err); else resolve(this.changes);
+        });
+    });
+};
+
+// Query: Viewer über Reset-Token finden (inkl. Ablaufdatum, Plausibilität prüft der Aufrufer)
+export const getViewerByResetToken = (token) => {
+    return new Promise((resolve, reject) => {
+        const query = `SELECT id, email, first_name, reset_token_expiry FROM login_data_user WHERE reset_token = ?`;
+        db.get(query, [token], (err, row) => {
+            if (err) reject(err); else resolve(row);
+        });
+    });
+};
+
+// Query: Passwort setzen und Reset-Token invalidieren (atomar pro Statement)
+export const updatePasswordAndClearResetToken = (id, hashedPassword) => {
+    return new Promise((resolve, reject) => {
+        const query = `UPDATE login_data_user SET password = ?, reset_token = NULL, reset_token_expiry = NULL WHERE id = ?`;
+        db.run(query, [hashedPassword, id], function (err) {
+            if (err) reject(err); else resolve(this.changes);
         });
     });
 };

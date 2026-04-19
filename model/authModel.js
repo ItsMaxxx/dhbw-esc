@@ -2,10 +2,10 @@ import bcrypt from "bcrypt";
 import crypto from "crypto";
 import { styleText } from "node:util";
 
-import { getJuryUser, getViewerByEmailForLogin, createViewerUser, getViewerByToken, verifyViewerAccount, getViewerById, updateViewerUser, deleteViewerUser, getAllCountries, countryCodeExists, vorwahlExists } from "./database.js";
+import { getJuryUser, getViewerByEmailForLogin, createViewerUser, getViewerByToken, verifyViewerAccount, getViewerById, updateViewerUser, deleteViewerUser, getAllCountries, countryCodeExists, vorwahlExists, setResetToken, getViewerByResetToken, updatePasswordAndClearResetToken } from "./database.js";
 
 export { getAllCountries };
-import { sendVerificationEmail } from "./mailer.js";
+import { sendVerificationEmail, sendPasswordResetEmail } from "./mailer.js";
 
 export const authenticateUser = async (role, email, password) => {
     try {
@@ -185,6 +185,64 @@ export const validateUserDataDB = async (data, requirePassword = false) => {
     }
 
     return { valid: true };
+};
+
+// Passwort-Reset anfordern: Token generieren, in DB speichern, Mail versenden.
+// WICHTIG: Aus Sicherheitsgründen wird dem Aufrufer NIE verraten, ob die E-Mail existiert.
+export const requestPasswordReset = async (email) => {
+    try {
+        const viewer = await getViewerByEmailForLogin(email);
+        // Nur verifizierte Viewer bekommen einen Reset (nicht verifizierte haben kein nutzbares Konto)
+        if (!viewer || viewer.is_verified !== 1) {
+            console.log(styleText("blue", `Reset-Request für unbekannte/unverifizierte E-Mail: ${email}`));
+            return { success: true };
+        }
+
+        const resetToken = crypto.randomBytes(32).toString("hex");
+        const expiry = Date.now() + 60 * 60 * 1000; // 1 Stunde gültig
+
+        await setResetToken(email, resetToken, expiry);
+        await sendPasswordResetEmail(email, resetToken, viewer.first_name);
+
+        console.log(styleText("green", `Passwort-Reset-Mail für ${email} ausgelöst.`));
+        return { success: true };
+    } catch (error) {
+        console.error(styleText("red", "Fehler bei requestPasswordReset: " + error.message));
+        // Auch bei internem Fehler: gleiche Antwort (Enumeration-Schutz)
+        return { success: true };
+    }
+};
+
+// Passwort-Reset durchführen: Token prüfen, neues Passwort hashen und speichern.
+export const resetPasswordWithToken = async (token, password, confirmPassword) => {
+    try {
+        if (!token || typeof token !== "string") {
+            return { success: false, message: "Ungültiger Reset-Link." };
+        }
+        if (!password || password !== confirmPassword) {
+            return { success: false, message: "Passwörter stimmen nicht überein." };
+        }
+        if (!/^(?=.*[A-Z])(?=.*[!@#$%^&*()\-]).{8,}$/.test(password)) {
+            return { success: false, message: "Passwort erfüllt die Anforderungen nicht." };
+        }
+
+        const row = await getViewerByResetToken(token);
+        if (!row) {
+            return { success: false, message: "Ungültiger oder bereits verwendeter Reset-Link." };
+        }
+        if (!row.reset_token_expiry || row.reset_token_expiry < Date.now()) {
+            return { success: false, message: "Der Reset-Link ist abgelaufen. Bitte fordere einen neuen an." };
+        }
+
+        const hashedPassword = await bcrypt.hash(password, 10);
+        await updatePasswordAndClearResetToken(row.id, hashedPassword);
+
+        console.log(styleText("green", `Passwort für ${row.email} erfolgreich zurückgesetzt.`));
+        return { success: true };
+    } catch (error) {
+        console.error(styleText("red", "Fehler bei resetPasswordWithToken: " + error.message));
+        return { success: false, message: "Interner Fehler beim Zurücksetzen des Passworts." };
+    }
 };
 
 // Token-Verifizierungs-Logik

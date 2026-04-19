@@ -25,6 +25,8 @@ import {
   deleteViewerAccount,
   getAllCountries,
   validateUserDataDB,
+  requestPasswordReset,
+  resetPasswordWithToken,
 } from "../model/authModel.js";
 
 // Importiere die Voting-Logik aus dem Model
@@ -134,6 +136,7 @@ const jsFiles = [
   "signup.js",
   "voting.js",
   "user.js",
+  "reset-password.js",
 ];
 for (const file of jsFiles) {
   app.get(`/js/${file}`, (req, res) => {
@@ -149,6 +152,7 @@ const staticPages = [
   ["/",                 "dhbw-esc.html"],
   ["/login",            "login.html"],
   ["/signup",           "signup.html"],
+  ["/reset-password",   "reset-password.html"],
   ["/voting",           "voting.html"],
   ["/user",             "user.html"],
   ["/impressum",        "rechtliches/impressum.html"],
@@ -344,6 +348,39 @@ app.post("/api/login", loginLimiter, async (req, res) => {
     console.log(styleText("red", `Login fehlgeschlagen: ${result.message}`));
     res.status(401).json(result);
   }
+});
+
+// Max. 10 Reset-Requests pro IP in 15 Minuten. Strenger als Login, weil jeder Request eine Mail auslöst (Gmail-Quota + Spam-Schutz).
+const forgotPasswordLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, message: "Zu viele Anfragen. Bitte warte 15 Minuten." },
+});
+
+// API-Endpunkt: Passwort-Reset anfordern
+app.post("/api/forgot-password", forgotPasswordLimiter, async (req, res) => {
+  const { email } = req.body || {};
+
+  if (!email || typeof email !== "string") {
+    return res.status(400).json({ success: false, message: "E-Mail fehlt." });
+  }
+
+  console.log(styleText("blue", `\nPasswort-Reset angefordert für: ${email}`));
+  const result = await requestPasswordReset(email);
+  // Immer 200 + generische Antwort (Enumeration-Schutz)
+  res.status(200).json(result);
+});
+
+// API-Endpunkt: Passwort-Reset durchführen
+app.post("/api/reset-password", forgotPasswordLimiter, async (req, res) => {
+  const { token, password, confirmPassword } = req.body || {};
+  const result = await resetPasswordWithToken(token, password, confirmPassword);
+  if (result.success) {
+    return res.status(200).json(result);
+  }
+  return res.status(400).json(result);
 });
 
 // API-Endpunkt für Logout

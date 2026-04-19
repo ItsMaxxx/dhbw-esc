@@ -99,3 +99,35 @@
     margin-bottom: 1rem;
     text-align: center;
 }
+
+.info-msg {
+    color: #b9d8ff;
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+    text-align: center;
+}
+
+.forgot-password-section {
+    margin-top: 1.2rem;
+    text-align: center;
+}
+
+.link-btn {
+    background: none;
+    border: none;
+    color: #b9d8ff;
+    text-decoration: underline;
+    cursor: pointer;
+    font-size: 0.9rem;
+    padding: 0;
+    font-family: inherit;
+}
+
+.link-btn:hover {
+    color: #ffffff;
+}
+
+.forgot-password-form {
+    margin-top: 1rem;
+    text-align: left;
+}

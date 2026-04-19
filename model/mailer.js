@@ -59,3 +59,42 @@ export const sendVerificationEmail = async (userEmail, token, firstName) => {
     return false;
   }
 };
+
+export const sendPasswordResetEmail = async (userEmail, token, firstName) => {
+  const resetUrl = `http://localhost:3000/reset-password?token=${token}`;
+  const safeFirstName = escapeHtml(firstName || "");
+
+  const mailOptions = {
+    from: `"DHBW-ESC Voting" <${process.env.GMAIL_EMAIL}>`,
+    to: userEmail,
+    subject: "Passwort zurücksetzen",
+    html: `
+            <h2>Hallo ${safeFirstName},</h2>
+            <p>Es wurde angefragt, dein Passwort zurückzusetzen.</p>
+            <p>Klicke auf den folgenden Link, um ein neues Passwort zu vergeben. Der Link ist eine Stunde lang gültig:</p>
+            <a href="${resetUrl}" style="padding: 10px 15px; background-color: #6a4cff; color: white; text-decoration: none; border-radius: 5px; display: inline-block; margin-top: 10px;">Passwort zurücksetzen</a>
+            <p style="margin-top: 20px;">Falls der Button nicht funktioniert, kopiere diesen Link in deinen Browser:</p>
+            <p>${resetUrl}</p>
+            <p style="margin-top: 20px; color: #888; font-size: 0.9em;">Du hast keine Änderung angefordert? Dann ignoriere diese E-Mail einfach – dein Passwort bleibt unverändert.</p>
+        `,
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log(
+      styleText(
+        "green",
+        `Passwort-Reset-E-Mail erfolgreich an ${userEmail} gesendet.`,
+      ),
+    );
+    return true;
+  } catch (error) {
+    console.error(
+      styleText(
+        "red",
+        `Fehler beim Reset-Mail-Versand an ${userEmail}: ${error.message}`,
+      ),
+    );
+    return false;
+  }
+};
