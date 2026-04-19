@@ -132,7 +132,7 @@ const jsFiles = [
   "footer.js",
   "news-cards.js",
   "login.js",
-  "validate_userdata.js",
+  "country-dropdowns.js",
   "signup.js",
   "voting.js",
   "user.js",
@@ -477,7 +477,9 @@ app.post("/api/user/update", requireViewer, async (req, res) => {
     req.session.user.country = countryCode;
     return res.status(200).json({ success: true });
   }
-  return res.status(500).json(result);
+  // Kollisions-/Validierungsfehler → 400, interner Fehler → 500
+  const status = result.message === "Diese E-Mail ist bereits registriert." ? 400 : 500;
+  return res.status(status).json(result);
 });
 
 // API-Endpunkt: Viewer-Account löschen
@@ -698,7 +700,7 @@ function logClientInfo(req) {
   const route = req.originalUrl; // Liest die aufgerufene URL aus ("/voting")
 
   console.log(
-    `${styleText("blue", "Aufruf")} ➔ IP: ${clientIp} ➔ OS: ${shortDevice}" ${styleText("blue", "für")} "${route}"`,
+    `${styleText("blue", "Aufruf")} ➔ IP: ${clientIp} ➔ OS: ${shortDevice} ${styleText("blue", "für")} "${route}"`,
   );
 }
 

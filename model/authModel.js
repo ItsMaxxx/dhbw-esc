@@ -102,6 +102,12 @@ export const getViewerProfile = async (id) => {
 // Profil-Update
 export const updateViewerProfile = async (id, data) => {
     try {
+        // E-Mail-Kollision prüfen: nicht erlaubt, wenn neue Mail bereits einem anderen User gehört
+        const existing = await getViewerByEmailForLogin(data.email);
+        if (existing && existing.id !== id) {
+            return { success: false, message: "Diese E-Mail ist bereits registriert." };
+        }
+
         let hashedPassword = null;
         if (data.password) {
             hashedPassword = await bcrypt.hash(data.password, 10);

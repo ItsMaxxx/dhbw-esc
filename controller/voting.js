@@ -1,6 +1,6 @@
 // voting.js - Steuert Tabs, Stimmenzähler und das Absenden der Votes
 
-let session = { loggedIn: false };
+let userSession = { loggedIn: false };
 let singers = [];
 let viewerVotes = {}; // singerId -> points (nur Zuschauer)
 let votingState = { votingOpen: false, resultsVisible: false };
@@ -10,7 +10,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     // 1. Session laden
     try {
         const sessionRes = await fetch("/api/check-session");
-        session = await sessionRes.json();
+        userSession = await sessionRes.json();
     } catch (e) {
         console.error("Session-Check fehlgeschlagen:", e);
     }
@@ -24,7 +24,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     // 3. Admin-Tab-Button sichtbar machen (vor initTabs, damit der Listener sitzt)
-    if (session.loggedIn && session.user?.role === "admin") {
+    if (userSession.loggedIn && userSession.user?.role === "admin") {
         const adminBtn = document.getElementById("tab-btn-admin");
         if (adminBtn) adminBtn.classList.remove("hidden");
     }
@@ -50,7 +50,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (submitBtn) submitBtn.addEventListener("click", submitVotes);
 
     // 5. Admin-Tab initialisieren
-    if (session.loggedIn && session.user?.role === "admin") {
+    if (userSession.loggedIn && userSession.user?.role === "admin") {
         initAdminTab();
     }
 
@@ -90,7 +90,7 @@ function renderVotingTab() {
 
     list.innerHTML = "";
 
-    if (!session.loggedIn || !session.user) {
+    if (!userSession.loggedIn || !userSession.user) {
         loginRequired.classList.remove("hidden");
         header.classList.add("hidden");
         submitWrapper.classList.add("hidden");
@@ -99,7 +99,7 @@ function renderVotingTab() {
     }
 
     loginRequired.classList.add("hidden");
-    const role = session.user.role;
+    const role = userSession.user.role;
 
     // Admin sieht kein Voting-Formular, aber die Sängerliste
     if (role === "admin") {
@@ -134,30 +134,30 @@ function renderVotingTab() {
         document.getElementById("voting-title").textContent =
             "Deine Stimmen verteilen";
         document.getElementById("voting-info").textContent =
-            `Du hast insgesamt 20 Stimmen. Verteile sie beliebig auf die Sänger. Für dein eigenes Land (${session.user.country || "-"}) kannst du nicht abstimmen.`;
+            `Du hast insgesamt 20 Stimmen. Verteile sie beliebig auf die Sänger. Für dein eigenes Land (${userSession.user.country || "-"}) kannst du nicht abstimmen.`;
         document.getElementById("vote-counter-max").textContent = "20";
 
         for (const s of singers) {
             const isOwn =
-                session.user.country &&
+                userSession.user.country &&
                 s.landcode &&
-                session.user.country.toString().toUpperCase() ===
+                userSession.user.country.toString().toUpperCase() ===
                     s.landcode.toString().toUpperCase();
             list.appendChild(buildViewerRow(s, isOwn));
         }
         updateViewerCounter();
     } else if (role === "jury") {
         document.getElementById("voting-title").textContent =
-            `Jury-Voting (${session.user.country || ""})`;
+            `Jury-Voting (${userSession.user.country || ""})`;
         document.getElementById("voting-info").textContent =
-            `Vergib ESC-Punkte: 1-8, 10, 12. Jeder Punktewert darf nur einmal vergeben werden. Für dein eigenes Land (${session.user.country || "-"}) kannst du nicht abstimmen.`;
+            `Vergib ESC-Punkte: 1-8, 10, 12. Jeder Punktewert darf nur einmal vergeben werden. Für dein eigenes Land (${userSession.user.country || "-"}) kannst du nicht abstimmen.`;
         document.querySelector(".vote-counter").classList.add("hidden");
 
         for (const s of singers) {
             const isOwn =
-                session.user.country &&
+                userSession.user.country &&
                 s.country &&
-                session.user.country.toString().toUpperCase() ===
+                userSession.user.country.toString().toUpperCase() ===
                     s.country.toString().toUpperCase();
             list.appendChild(buildJuryRow(s, isOwn));
         }
@@ -305,12 +305,12 @@ async function submitVotes() {
     errorEl.classList.add("hidden");
     successEl.classList.add("hidden");
 
-    if (!session.loggedIn || !session.user) return;
+    if (!userSession.loggedIn || !userSession.user) return;
 
     let endpoint;
     let body;
 
-    if (session.user.role === "viewer") {
+    if (userSession.user.role === "viewer") {
         endpoint = "/api/vote/viewer";
         const votes = Object.entries(viewerVotes)
             .filter(([, p]) => (p || 0) > 0)
@@ -319,7 +319,7 @@ async function submitVotes() {
                 points: Number(points),
             }));
         body = { votes };
-    } else if (session.user.role === "jury") {
+    } else if (userSession.user.role === "jury") {
         endpoint = "/api/vote/jury";
         const votes = [];
         document.querySelectorAll(".jury-select").forEach((s) => {
@@ -484,7 +484,7 @@ function initSSE() {
         renderVotingTab();
 
         // Admin-Badges aktualisieren
-        if (session.loggedIn && session.user?.role === "admin") {
+        if (userSession.loggedIn && userSession.user?.role === "admin") {
             updateAdminBadges();
         }
 
@@ -499,7 +499,7 @@ function initSSE() {
         if (currentTab === "results" && votingState.resultsVisible) {
             loadResults();
         }
-        if (currentTab === "admin" && session.loggedIn && session.user?.role === "admin") {
+        if (currentTab === "admin" && userSession.loggedIn && userSession.user?.role === "admin") {
             loadResults();
         }
     });

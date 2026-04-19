@@ -1,57 +1,16 @@
-// Bidirektionale Maps für Auto-Auswahl (landcode ↔ vorwahl)
-let landcodeZuVorwahl = new Map();
-let vorwahlZuLandcode = new Map();
-let erlaubteWerte = null;
-
 document.addEventListener("DOMContentLoaded", async () => {
     try {
-        // Profil und Länderliste parallel laden
-        const [profileRes, laenderRes] = await Promise.all([
+        // Profil und Dropdowns parallel laden
+        const [profileRes] = await Promise.all([
             fetch("/api/user/profile"),
-            fetch("/api/countries"),
+            initCountryDropdowns("countryCode", "phonePrefix"),
         ]);
         const profileData = await profileRes.json();
-        const laender = await laenderRes.json();
 
         if (!profileData.success) {
             window.location.href = "/login";
             return;
         }
-
-        // Dropdowns befüllen
-        const countrySelect = document.getElementById("countryCode");
-        const prefixSelect = document.getElementById("phonePrefix");
-        const laendercodes = new Set();
-        const vorwahlen = new Set();
-
-        for (const c of laender) {
-            laendercodes.add(c.landcode);
-            countrySelect.insertAdjacentHTML(
-                "beforeend",
-                `<option value="${c.landcode}">${c.country} (${c.landcode})</option>`
-            );
-            if (c.vorwahl) {
-                vorwahlen.add(c.vorwahl);
-                landcodeZuVorwahl.set(c.landcode, c.vorwahl);
-                vorwahlZuLandcode.set(c.vorwahl, c.landcode);
-                prefixSelect.insertAdjacentHTML(
-                    "beforeend",
-                    `<option value="${c.vorwahl}">${c.vorwahl} (${c.landcode})</option>`
-                );
-            }
-        }
-
-        erlaubteWerte = { laendercodes, vorwahlen };
-
-        // Auto-Auswahl: Landcode → Vorwahl
-        countrySelect.addEventListener("change", () => {
-            prefixSelect.value = landcodeZuVorwahl.get(countrySelect.value) || "";
-        });
-
-        // Auto-Auswahl: Vorwahl → Landcode
-        prefixSelect.addEventListener("change", () => {
-            countrySelect.value = vorwahlZuLandcode.get(prefixSelect.value) || "";
-        });
 
         // Profil-Felder befüllen (nach Dropdown-Befüllung, damit Werte gesetzt werden können)
         const p = profileData.profile;
@@ -90,29 +49,19 @@ document.getElementById("profileForm").addEventListener("submit", async (e) => {
     const errorEl = document.getElementById("profile-error-message");
     errorEl.className = "error-msg hidden";
 
-    const firstName = document.getElementById("firstName").value.trim();
-    const lastName = document.getElementById("lastName").value.trim();
-    const email = document.getElementById("email").value.trim();
-    const phonePrefix = document.getElementById("phonePrefix").value;
-    const phoneNumber = document.getElementById("phoneNumber").value.trim();
-    const birthDate = document.getElementById("birthDate").value;
-    const gender = document.getElementById("gender").value;
-    const countryCode = document.getElementById("countryCode").value;
     const password = document.getElementById("password").value;
     const confirmPassword = document.getElementById("confirmPassword").value;
 
-    const pruefung = validateUserData(
-        { firstName, lastName, email, phonePrefix, phoneNumber, birthDate, gender, countryCode, password, confirmPassword },
-        false,
-        erlaubteWerte
-    );
-    if (!pruefung.ok) {
-        errorEl.textContent = pruefung.meldung;
-        errorEl.classList.remove("hidden");
-        return;
-    }
-
-    const payload = { firstName, lastName, email, phonePrefix, phoneNumber, birthDate, gender, countryCode };
+    const payload = {
+        firstName: document.getElementById("firstName").value.trim(),
+        lastName: document.getElementById("lastName").value.trim(),
+        email: document.getElementById("email").value.trim(),
+        phonePrefix: document.getElementById("phonePrefix").value,
+        phoneNumber: document.getElementById("phoneNumber").value.trim(),
+        birthDate: document.getElementById("birthDate").value,
+        gender: document.getElementById("gender").value,
+        countryCode: document.getElementById("countryCode").value,
+    };
     if (password) {
         payload.password = password;
         payload.confirmPassword = confirmPassword;
