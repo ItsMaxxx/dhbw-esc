@@ -1,8 +1,4 @@
 document.querySelector('.footer').innerHTML = `
-    <section class="footer-partners">
-        <p>Partners</p>
-    </section>
-
     <div class="footer-content-wrapper">
         <div class="footer-section footer-logo">
             <img

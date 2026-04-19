@@ -234,11 +234,8 @@ function buildJuryRow(singer, isOwn) {
 }
 
 function baseRowHtml(singer) {
-    const flag = singer.land_bild
-        ? `<img src="${escapeAttr(singer.land_bild)}" alt="${escapeAttr(singer.landcode || "")}" class="flag" />`
-        : `<span class="flag flag-placeholder"></span>`;
     return `
-        ${flag}
+        ${flagHtml(singer)}
         <span class="landcode">${escapeHtml(singer.landcode || "")}</span>
         <span class="singer-name">${escapeHtml(singer.singer_name)}</span>
         <span class="song-name">${escapeHtml(singer.song_name)}</span>
@@ -401,11 +398,8 @@ async function loadResults() {
         for (const r of sorted) {
             const li = document.createElement("li");
             li.className = "singer-row results-row";
-            const flag = r.land_bild
-                ? `<img src="${escapeAttr(r.land_bild)}" alt="${escapeAttr(r.landcode || "")}" class="flag" />`
-                : `<span class="flag flag-placeholder"></span>`;
             li.innerHTML = `
-                ${flag}
+                ${flagHtml(r)}
                 <span class="landcode">${escapeHtml(r.landcode || "")}</span>
                 <span class="singer-name">${escapeHtml(r.singer_name)}</span>
                 <span class="song-name">${escapeHtml(r.song_name)}</span>
@@ -429,85 +423,37 @@ async function loadResults() {
 function initAdminTab() {
     updateAdminBadges();
 
-    document.getElementById("btn-start-voting").addEventListener("click", async () => {
-        const info = document.getElementById("admin-start-info");
-        try {
-            const res = await fetch("/api/admin/start-voting", { method: "POST" });
-            const data = await res.json();
-            if (data.success) {
-                votingState.votingOpen = true;
-                info.textContent = "Voting wurde gestartet!";
-                info.className = "admin-info success";
-                updateAdminBadges();
-            } else {
-                info.textContent = data.message || "Fehler.";
-                info.className = "admin-info error";
-            }
-        } catch (e) {
-            info.textContent = "Verbindungsfehler.";
-            info.className = "admin-info error";
-        }
+    adminAction({
+        btnId: "btn-start-voting",
+        infoId: "admin-start-info",
+        endpoint: "/api/admin/start-voting",
+        successText: "Voting wurde gestartet!",
+        onSuccess: () => { votingState.votingOpen = true; updateAdminBadges(); },
     });
 
-    document.getElementById("btn-show-results").addEventListener("click", async () => {
-        const info = document.getElementById("admin-show-info");
-        try {
-            const res = await fetch("/api/admin/show-results", { method: "POST" });
-            const data = await res.json();
-            if (data.success) {
-                votingState.resultsVisible = true;
-                info.textContent = "Ergebnisse wurden freigegeben!";
-                info.className = "admin-info success";
-                updateAdminBadges();
-            } else {
-                info.textContent = data.message || "Fehler.";
-                info.className = "admin-info error";
-            }
-        } catch (e) {
-            info.textContent = "Verbindungsfehler.";
-            info.className = "admin-info error";
-        }
+    adminAction({
+        btnId: "btn-show-results",
+        infoId: "admin-show-info",
+        endpoint: "/api/admin/show-results",
+        successText: "Ergebnisse wurden freigegeben!",
+        onSuccess: () => { votingState.resultsVisible = true; updateAdminBadges(); },
     });
 
-    document.getElementById("btn-clear-votes").addEventListener("click", async () => {
-        const info = document.getElementById("admin-clear-info");
-        if (!confirm("Wirklich alle Votes löschen? Diese Aktion kann nicht rückgängig gemacht werden.")) return;
-        try {
-            const res = await fetch("/api/admin/clear-votes", { method: "POST" });
-            const data = await res.json();
-            if (data.success) {
-                info.textContent = "Alle Votes wurden gelöscht.";
-                info.className = "admin-info success";
-            } else {
-                info.textContent = data.message || "Fehler.";
-                info.className = "admin-info error";
-            }
-        } catch (e) {
-            info.textContent = "Verbindungsfehler.";
-            info.className = "admin-info error";
-        }
+    adminAction({
+        btnId: "btn-clear-votes",
+        infoId: "admin-clear-info",
+        endpoint: "/api/admin/clear-votes",
+        confirmMsg: "Wirklich alle Votes löschen? Diese Aktion kann nicht rückgängig gemacht werden.",
+        successText: "Alle Votes wurden gelöscht.",
     });
 
-    document.getElementById("btn-reset-state").addEventListener("click", async () => {
-        const info = document.getElementById("admin-reset-info");
-        if (!confirm("Voting und Ergebnisse wirklich zurücksetzen? Voting und Results-Anzeige werden gesperrt.")) return;
-        try {
-            const res = await fetch("/api/admin/reset-state", { method: "POST" });
-            const data = await res.json();
-            if (data.success) {
-                votingState.votingOpen = false;
-                votingState.resultsVisible = false;
-                info.textContent = "Status wurde zurückgesetzt.";
-                info.className = "admin-info success";
-                updateAdminBadges();
-            } else {
-                info.textContent = data.message || "Fehler.";
-                info.className = "admin-info error";
-            }
-        } catch (e) {
-            info.textContent = "Verbindungsfehler.";
-            info.className = "admin-info error";
-        }
+    adminAction({
+        btnId: "btn-reset-state",
+        infoId: "admin-reset-info",
+        endpoint: "/api/admin/reset-state",
+        confirmMsg: "Voting und Ergebnisse wirklich zurücksetzen? Voting und Results-Anzeige werden gesperrt.",
+        successText: "Status wurde zurückgesetzt.",
+        onSuccess: () => { votingState.votingOpen = false; votingState.resultsVisible = false; updateAdminBadges(); },
     });
 }
 
@@ -576,6 +522,30 @@ function escapeHtml(str) {
     );
 }
 
-function escapeAttr(str) {
-    return escapeHtml(str);
+function flagHtml(s) {
+    return s.land_bild
+        ? `<img src="${escapeHtml(s.land_bild)}" alt="${escapeHtml(s.landcode || "")}" class="flag" />`
+        : `<span class="flag flag-placeholder"></span>`;
+}
+
+async function adminAction({ btnId, infoId, endpoint, confirmMsg, successText, onSuccess }) {
+    const info = document.getElementById(infoId);
+    document.getElementById(btnId).addEventListener("click", async () => {
+        if (confirmMsg && !confirm(confirmMsg)) return;
+        try {
+            const res = await fetch(endpoint, { method: "POST" });
+            const data = await res.json();
+            if (data.success) {
+                info.textContent = successText;
+                info.className = "admin-info success";
+                if (onSuccess) onSuccess();
+            } else {
+                info.textContent = data.message || "Fehler.";
+                info.className = "admin-info error";
+            }
+        } catch (e) {
+            info.textContent = "Verbindungsfehler.";
+            info.className = "admin-info error";
+        }
+    });
 }

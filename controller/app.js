@@ -126,6 +126,7 @@ app.use(
 const jsFiles = [
   "auth.js",
   "cookie.js",
+  "header.js",
   "footer.js",
   "news-cards.js",
   "login.js",
@@ -144,60 +145,23 @@ for (const file of jsFiles) {
 // 2. GET-Routen
 //
 
-app.get("/", (req, res) => {
-  logClientInfo(req);
-  res.status(200).sendFile(path.join(__dirname, "../view/dhbw-esc.html"));
-});
-
-app.get("/login", (req, res) => {
-  logClientInfo(req);
-  res.status(200).sendFile(path.join(__dirname, "../view/login.html"));
-});
-
-app.get("/signup", (req, res) => {
-  logClientInfo(req);
-  res.status(200).sendFile(path.join(__dirname, "../view/signup.html"));
-});
-
-app.get("/voting", (req, res) => {
-  logClientInfo(req);
-  res.status(200).sendFile(path.join(__dirname, "../view/voting.html"));
-});
-
-app.get("/impressum", (req, res) => {
-  logClientInfo(req);
-  res
-    .status(200)
-    .sendFile(path.join(__dirname, "../view/rechtliches/impressum.html"));
-});
-
-app.get("/datenschutz", (req, res) => {
-  logClientInfo(req);
-  res
-    .status(200)
-    .sendFile(path.join(__dirname, "../view/rechtliches/datenschutz.html"));
-});
-
-app.get("/cookie-richtlinie", (req, res) => {
-  logClientInfo(req);
-  res
-    .status(200)
-    .sendFile(
-      path.join(__dirname, "../view/rechtliches/cookie-richtlinie.html"),
-    );
-});
-
-app.get("/agb", (req, res) => {
-  logClientInfo(req);
-  res
-    .status(200)
-    .sendFile(path.join(__dirname, "../view/rechtliches/agb.html"));
-});
-
-app.get("/user", (req, res) => {
-  logClientInfo(req);
-  res.status(200).sendFile(path.join(__dirname, "../view/user.html"));
-});
+const staticPages = [
+  ["/",                 "dhbw-esc.html"],
+  ["/login",            "login.html"],
+  ["/signup",           "signup.html"],
+  ["/voting",           "voting.html"],
+  ["/user",             "user.html"],
+  ["/impressum",        "rechtliches/impressum.html"],
+  ["/datenschutz",      "rechtliches/datenschutz.html"],
+  ["/cookie-richtlinie","rechtliches/cookie-richtlinie.html"],
+  ["/agb",              "rechtliches/agb.html"],
+];
+for (const [route, file] of staticPages) {
+  app.get(route, (req, res) => {
+    logClientInfo(req);
+    res.status(200).sendFile(path.join(__dirname, `../view/${file}`));
+  });
+}
 
 // News-Artikel als statische HTML-Dateien ausliefern
 const newsSlugs = [
@@ -427,26 +391,15 @@ app.post("/api/logout", (req, res) => {
 });
 
 // API-Endpunkt: Viewer-Profil laden
-app.get("/api/user/profile", async (req, res) => {
-  const user = req.session && req.session.user;
-  if (!user || user.role !== "viewer") {
-    return res
-      .status(401)
-      .json({ success: false, message: "Nicht eingeloggt." });
-  }
-  const profile = await getViewerProfile(user.id);
+app.get("/api/user/profile", requireViewer, async (req, res) => {
+  const profile = await getViewerProfile(req.session.user.id);
   if (!profile) return res.status(404).json({ success: false });
   res.status(200).json({ success: true, profile });
 });
 
 // API-Endpunkt: Viewer-Profil aktualisieren
-app.post("/api/user/update", async (req, res) => {
-  const user = req.session && req.session.user;
-  if (!user || user.role !== "viewer") {
-    return res
-      .status(401)
-      .json({ success: false, message: "Nicht eingeloggt." });
-  }
+app.post("/api/user/update", requireViewer, async (req, res) => {
+  const user = req.session.user;
 
   const {
     firstName,
@@ -491,13 +444,8 @@ app.post("/api/user/update", async (req, res) => {
 });
 
 // API-Endpunkt: Viewer-Account löschen
-app.delete("/api/user/delete", async (req, res) => {
-  const user = req.session && req.session.user;
-  if (!user || user.role !== "viewer") {
-    return res
-      .status(401)
-      .json({ success: false, message: "Nicht eingeloggt." });
-  }
+app.delete("/api/user/delete", requireViewer, async (req, res) => {
+  const user = req.session.user;
 
   const result = await deleteViewerAccount(user.id);
   if (!result.success) return res.status(500).json(result);
@@ -561,6 +509,15 @@ function requireAdmin(req, res, next) {
   const user = req.session && req.session.user;
   if (!user || user.role !== "admin") {
     return res.status(403).json({ success: false, message: "Kein Zugriff." });
+  }
+  next();
+}
+
+// Viewer-Middleware
+function requireViewer(req, res, next) {
+  const user = req.session && req.session.user;
+  if (!user || user.role !== "viewer") {
+    return res.status(401).json({ success: false, message: "Nicht eingeloggt." });
   }
   next();
 }

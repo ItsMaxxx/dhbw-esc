@@ -2,7 +2,7 @@ import bcrypt from "bcrypt";
 import crypto from "crypto";
 import { styleText } from "node:util";
 
-import { getJuryUser, getViewerUser, getViewerByEmailForLogin, createViewerUser, getViewerByToken, verifyViewerAccount, getViewerById, updateViewerUser, deleteViewerUser, getAllCountries, countryCodeExists, vorwahlExists } from "./database.js";
+import { getJuryUser, getViewerByEmailForLogin, createViewerUser, getViewerByToken, verifyViewerAccount, getViewerById, updateViewerUser, deleteViewerUser, getAllCountries, countryCodeExists, vorwahlExists } from "./database.js";
 
 export { getAllCountries };
 import { sendVerificationEmail } from "./mailer.js";

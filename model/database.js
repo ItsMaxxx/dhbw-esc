@@ -41,29 +41,6 @@ export const getJuryUser = (email, password) => {
     });
 };
 
-// Query für: Viewer-Login
-export const getViewerUser = (email, password) => {
-    return new Promise((resolve, reject) => {
-        console.log(styleText("blue", `DB-Abfrage für Viewer-Login gestartet: ${email}`));
-
-        const query = `SELECT id, first_name, last_name, email, country_code FROM login_data_user WHERE email = ? AND password = ?`;
-
-        db.get(query, [email, password], (err, row) => {
-            if (err) {
-                console.error(styleText("red", "DB-Fehler beim Viewer-Login-Select: " + err.message));
-                reject(err);
-            } else {
-                if (row) {
-                    console.log(styleText("green",`Viewer-Match in DB gefunden! ID=${row.id}, E-Mail=${row.email}, Land=${row.country_code}`));
-                } else {
-                    console.log(styleText("red",`Kein Viewer-Match in DB für: ${email}`));
-                }
-                resolve(row); // row oder undefined
-            }
-        });
-    });
-};
-
 // Query für: Viewer-Login (Suche nach E-Mail und Passwort-Hash)
 export const getViewerByEmailForLogin = (email) => {
     return new Promise((resolve, reject) => {
