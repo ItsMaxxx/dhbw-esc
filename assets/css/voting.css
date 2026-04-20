@@ -49,23 +49,13 @@
     display: none;
 }
 
-/* ----- Voting-Header + Counter ----- */
+/* ----- Voting-Header ----- */
 .voting-header {
     margin-bottom: 1.5rem;
 }
 
 .voting-header h2 {
     margin-bottom: 0.5rem;
-}
-
-.vote-counter {
-    font-size: 1.3rem;
-    font-weight: bold;
-    margin-top: 0.75rem;
-}
-
-.vote-counter.over {
-    color: #ff4d4d;
 }
 
 /* ----- Sänger-Liste ----- */
@@ -122,7 +112,7 @@
     color: #cfc2ff;
 }
 
-/* ----- Vote-Controls (Viewer) ----- */
+/* ----- Vote-Controls ----- */
 .vote-controls {
     display: flex;
     align-items: center;
@@ -130,46 +120,7 @@
     margin-left: auto;
 }
 
-.vote-btn {
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    background: #3b1e99;
-    color: white;
-    border: none;
-    font-size: 1.3rem;
-    cursor: pointer;
-    transition: background 0.2s;
-}
-
-.vote-btn:hover {
-    background: #6a4cff;
-}
-
-.vote-input {
-    width: 60px;
-    height: 36px;
-    text-align: center;
-    border-radius: 5px;
-    border: none;
-    font-size: 1.1rem;
-    background: rgba(255, 255, 255, 0.9);
-    color: #1a0033;
-    font-weight: bold;
-}
-
-/* Chrome/Edge: Spinner entfernen */
-.vote-input::-webkit-outer-spin-button,
-.vote-input::-webkit-inner-spin-button {
-    -webkit-appearance: none;
-    margin: 0;
-}
-.vote-input[type="number"] {
-    -moz-appearance: textfield;
-}
-
-/* ----- Jury-Select ----- */
-.jury-select {
+.vote-select {
     padding: 0.5rem 0.75rem;
     border-radius: 5px;
     border: 1px solid rgba(255, 255, 255, 0.3);
@@ -180,7 +131,7 @@
     min-width: 70px;
 }
 
-.jury-select.duplicate {
+.vote-select.duplicate {
     border-color: #ff4d4d;
     box-shadow: 0 0 0 2px #ff4d4d;
 }

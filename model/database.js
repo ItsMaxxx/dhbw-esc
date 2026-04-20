@@ -173,15 +173,6 @@ export const getAllSingers = () => {
     });
 };
 
-// Query: country-ID zu einem Landcode holen (z.B. "DE")
-export const getCountryByLandcode = (landcode) => {
-    return new Promise((resolve, reject) => {
-        db.get(`SELECT id, country, landcode FROM country WHERE landcode = ?`, [landcode], (err, row) => {
-            if (err) reject(err); else resolve(row);
-        });
-    });
-};
-
 // Query: Alle Viewer-Votes eines Users löschen (Überschreiben bei erneuter Abgabe)
 export const deleteViewerVotes = (viewerId) => {
     return new Promise((resolve, reject) => {
@@ -222,18 +213,13 @@ export const insertJuryVote = (juryCountry, singerId, points) => {
     });
 };
 
-// Query: Rohstimmen der Viewer, gruppiert nach Herkunftsland + Sänger
-// Wird für die ESC-Punkte-Umrechnung (12/10/8/.../1 pro Voting-Land) verwendet
-export const getViewerVoteSumsPerCountry = () => {
+// Query: Viewer-Punkte-Summen pro Sänger (alle Viewer zusammen)
+export const getViewerPointsPerSinger = () => {
     return new Promise((resolve, reject) => {
         const query = `
-            SELECT
-                u.country_code AS voting_country,
-                v.singer_id    AS singer_id,
-                SUM(v.points)  AS total_raw_points
-            FROM vote_user v
-            JOIN login_data_user u ON v.viewer_id = u.id
-            GROUP BY u.country_code, v.singer_id
+            SELECT singer_id, SUM(points) AS viewer_points
+            FROM vote_user
+            GROUP BY singer_id
         `;
         db.all(query, [], (err, rows) => {
             if (err) reject(err); else resolve(rows || []);

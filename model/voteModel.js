@@ -1,20 +1,17 @@
 import { styleText } from "node:util";
 import {
     getAllSingers,
-    getCountryByLandcode,
     deleteViewerVotes,
     insertViewerVote,
     deleteJuryVotes,
     insertJuryVote,
-    getViewerVoteSumsPerCountry,
+    getViewerPointsPerSinger,
     getJuryPointsPerSinger,
     deleteAllVotes,
 } from "./database.js";
 
-// Klassisches ESC-Punkteschema (Top 10 eines Landes → 12, 10, 8, ..., 1)
-const ESC_POINTS = [12, 10, 8, 7, 6, 5, 4, 3, 2, 1];
-const ALLOWED_JURY_POINTS = new Set([1, 2, 3, 4, 5, 6, 7, 8, 10, 12]);
-const MAX_VIEWER_POINTS_TOTAL = 20;
+// Klassisches ESC-Punkteschema (1-8, 10, 12, jeder Wert nur einmal)
+const ALLOWED_POINTS = new Set([1, 2, 3, 4, 5, 6, 7, 8, 10, 12]);
 
 // Alle Sänger inkl. Länderdaten für Voting-/Results-Tab holen
 export const fetchAllSingers = async () => {
@@ -26,62 +23,63 @@ export const fetchAllSingers = async () => {
     }
 };
 
+// Gemeinsame Validierung für Viewer- und Jury-Votes
+function validateVotes(rawVotes, ownSingerIds) {
+    if (!Array.isArray(rawVotes)) {
+        return { error: "Ungültige Vote-Daten." };
+    }
+    const cleaned = [];
+    const usedPoints = new Set();
+    const usedSingers = new Set();
+    for (const v of rawVotes) {
+        const singerId = Number(v.singerId);
+        const points = Number(v.points);
+        if (!Number.isInteger(singerId) || !Number.isInteger(points)) {
+            return { error: "Ungültige Vote-Daten." };
+        }
+        if (!ALLOWED_POINTS.has(points)) {
+            return { error: "Ungültige Punktzahl. Erlaubt: 1–8, 10, 12." };
+        }
+        if (usedPoints.has(points)) {
+            return { error: `Punktewert ${points} wurde doppelt vergeben.` };
+        }
+        if (usedSingers.has(singerId)) {
+            return { error: "Ein Sänger darf nur einmal bewertet werden." };
+        }
+        if (ownSingerIds.has(singerId)) {
+            return { error: "Du kannst nicht für dein eigenes Land abstimmen." };
+        }
+        usedPoints.add(points);
+        usedSingers.add(singerId);
+        cleaned.push({ singerId, points });
+    }
+    if (cleaned.length !== ALLOWED_POINTS.size) {
+        return { error: `Bitte alle ${ALLOWED_POINTS.size} Punktewerte (1-8, 10, 12) vergeben.` };
+    }
+    return { cleaned };
+}
+
 // Viewer-Votes speichern: alte Abgabe wird überschrieben
 export const submitViewerVotes = async (viewerId, viewerLandcode, rawVotes) => {
     try {
-        if (!Array.isArray(rawVotes)) {
-            return { success: false, message: "Ungültige Vote-Daten." };
-        }
+        const singers = await getAllSingers();
+        const ownSingerIds = new Set(
+            viewerLandcode
+                ? singers
+                      .filter(s => (s.landcode || "").toUpperCase() === viewerLandcode.toUpperCase())
+                      .map(s => s.singer_id)
+                : []
+        );
 
-        // Aggregieren + validieren
-        const cleaned = [];
-        const seen = new Set();
-        let total = 0;
-        for (const v of rawVotes) {
-            const singerId = Number(v.singerId);
-            const points = Number(v.points);
-            if (!Number.isInteger(singerId) || !Number.isInteger(points)) {
-                return { success: false, message: "Ungültige Vote-Daten." };
-            }
-            if (points < 0 || points > MAX_VIEWER_POINTS_TOTAL) {
-                return { success: false, message: "Stimmen pro Sänger müssen zwischen 0 und 20 liegen." };
-            }
-            if (seen.has(singerId)) {
-                return { success: false, message: "Ein Sänger darf nur einmal in der Abgabe vorkommen." };
-            }
-            seen.add(singerId);
-            total += points;
-            if (points > 0) cleaned.push({ singerId, points });
-        }
-        if (total === 0) {
-            return { success: false, message: "Bitte verteile mindestens eine Stimme." };
-        }
-        if (total > MAX_VIEWER_POINTS_TOTAL) {
-            return { success: false, message: `Insgesamt sind höchstens ${MAX_VIEWER_POINTS_TOTAL} Stimmen erlaubt.` };
-        }
-
-        // Sperre für das eigene Land (nur wenn landcode bekannt ist)
-        if (viewerLandcode) {
-            const ownCountry = await getCountryByLandcode(viewerLandcode);
-            if (ownCountry) {
-                const singers = await getAllSingers();
-                const ownSingerIds = new Set(
-                    singers.filter(s => s.country_id === ownCountry.id).map(s => s.singer_id)
-                );
-                for (const v of cleaned) {
-                    if (ownSingerIds.has(v.singerId)) {
-                        return { success: false, message: "Du kannst nicht für dein eigenes Land abstimmen." };
-                    }
-                }
-            }
-        }
+        const { error, cleaned } = validateVotes(rawVotes, ownSingerIds);
+        if (error) return { success: false, message: error };
 
         await deleteViewerVotes(viewerId);
         for (const v of cleaned) {
             await insertViewerVote(viewerId, v.singerId, v.points);
         }
 
-        console.log(styleText("green", `Viewer ${viewerId} hat ${total} Stimmen auf ${cleaned.length} Sänger verteilt.`));
+        console.log(styleText("green", `Viewer ${viewerId} hat ${cleaned.length} Bewertungen gespeichert.`));
         return { success: true };
     } catch (err) {
         console.error(styleText("red", "Fehler in submitViewerVotes: " + err.message));
@@ -95,48 +93,14 @@ export const submitJuryVotes = async (juryCountry, rawVotes) => {
         if (!juryCountry) {
             return { success: false, message: "Kein Jury-Land in der Session." };
         }
-        if (!Array.isArray(rawVotes)) {
-            return { success: false, message: "Ungültige Vote-Daten." };
-        }
 
-        const cleaned = [];
-        const usedPoints = new Set();
-        const usedSingers = new Set();
-
-        for (const v of rawVotes) {
-            const singerId = Number(v.singerId);
-            const points = Number(v.points);
-            if (!Number.isInteger(singerId) || !Number.isInteger(points)) {
-                return { success: false, message: "Ungültige Vote-Daten." };
-            }
-            if (!ALLOWED_JURY_POINTS.has(points)) {
-                return { success: false, message: "Ungültige Punktzahl. Erlaubt: 1–8, 10, 12." };
-            }
-            if (usedPoints.has(points)) {
-                return { success: false, message: `Punktewert ${points} wurde doppelt vergeben.` };
-            }
-            if (usedSingers.has(singerId)) {
-                return { success: false, message: "Ein Sänger darf nur einmal bewertet werden." };
-            }
-            usedPoints.add(points);
-            usedSingers.add(singerId);
-            cleaned.push({ singerId, points });
-        }
-
-        if (cleaned.length === 0) {
-            return { success: false, message: "Bitte vergib mindestens eine Bewertung." };
-        }
-
-        // Sperre für das eigene Land (Jury-Country ist der Ländername, z.B. "Germany")
         const singers = await getAllSingers();
         const ownSingerIds = new Set(
             singers.filter(s => s.country === juryCountry).map(s => s.singer_id)
         );
-        for (const v of cleaned) {
-            if (ownSingerIds.has(v.singerId)) {
-                return { success: false, message: "Du kannst nicht für dein eigenes Land abstimmen." };
-            }
-        }
+
+        const { error, cleaned } = validateVotes(rawVotes, ownSingerIds);
+        if (error) return { success: false, message: error };
 
         await deleteJuryVotes(juryCountry);
         for (const v of cleaned) {
@@ -163,41 +127,17 @@ export const clearAllVotes = async () => {
     }
 };
 
-// Finale Punkte pro Sänger: Jury-Summe + Zuschauer-Umrechnung (12/10/8/.../1 pro Voting-Land)
+// Finale Punkte pro Sänger: Jury- und Viewer-Punkte direkt aufsummiert
 export const calculateResults = async () => {
     try {
-        const singers = await getAllSingers();
+        const [singers, juryRows, viewerRows] = await Promise.all([
+            getAllSingers(),
+            getJuryPointsPerSinger(),
+            getViewerPointsPerSinger(),
+        ]);
 
-        // 1. Jury-Punkte (direkt aufsummiert)
-        const juryRows = await getJuryPointsPerSinger();
-        const juryMap = new Map();
-        for (const r of juryRows) {
-            juryMap.set(r.singer_id, r.jury_points || 0);
-        }
-
-        // 2. Viewer-Rohstimmen pro Herkunftsland -> ESC-Punkte
-        const viewerRaw = await getViewerVoteSumsPerCountry();
-        const byVotingCountry = new Map();
-        for (const r of viewerRaw) {
-            if (!byVotingCountry.has(r.voting_country)) {
-                byVotingCountry.set(r.voting_country, []);
-            }
-            byVotingCountry.get(r.voting_country).push({
-                singerId: r.singer_id,
-                raw: r.total_raw_points,
-            });
-        }
-
-        const viewerMap = new Map();
-        for (const [, list] of byVotingCountry) {
-            // Absteigend nach Rohstimmen sortieren
-            list.sort((a, b) => b.raw - a.raw);
-            // Top-N bekommen ESC-Punkte (12, 10, 8, 7, ..., 1)
-            for (let i = 0; i < list.length && i < ESC_POINTS.length; i++) {
-                const id = list[i].singerId;
-                viewerMap.set(id, (viewerMap.get(id) || 0) + ESC_POINTS[i]);
-            }
-        }
+        const juryMap = new Map(juryRows.map(r => [r.singer_id, r.jury_points || 0]));
+        const viewerMap = new Map(viewerRows.map(r => [r.singer_id, r.viewer_points || 0]));
 
         return singers.map(s => ({
             singer_id: s.singer_id,

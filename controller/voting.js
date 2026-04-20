@@ -1,8 +1,7 @@
-// voting.js - Steuert Tabs, Stimmenzähler und das Absenden der Votes
+// voting.js - Steuert Tabs und das Absenden der Votes (Viewer + Jury teilen die gleiche Logik)
 
 let userSession = { loggedIn: false };
 let singers = [];
-let viewerVotes = {}; // singerId -> points (nur Zuschauer)
 let votingState = { votingOpen: false, resultsVisible: false };
 let currentTab = "voting";
 
@@ -127,46 +126,31 @@ function renderVotingTab() {
         return;
     }
 
-    header.classList.remove("hidden");
-    submitWrapper.classList.remove("hidden");
-
-    if (role === "viewer") {
-        document.getElementById("voting-title").textContent =
-            "Deine Stimmen verteilen";
-        document.getElementById("voting-info").textContent =
-            `Du hast insgesamt 20 Stimmen. Verteile sie beliebig auf die Sänger. Für dein eigenes Land (${userSession.user.country || "-"}) kannst du nicht abstimmen.`;
-        document.getElementById("vote-counter-max").textContent = "20";
-
-        for (const s of singers) {
-            const isOwn =
-                userSession.user.country &&
-                s.landcode &&
-                userSession.user.country.toString().toUpperCase() ===
-                    s.landcode.toString().toUpperCase();
-            list.appendChild(buildViewerRow(s, isOwn));
-        }
-        updateViewerCounter();
-    } else if (role === "jury") {
-        document.getElementById("voting-title").textContent =
-            `Jury-Voting (${userSession.user.country || ""})`;
-        document.getElementById("voting-info").textContent =
-            `Vergib ESC-Punkte: 1-8, 10, 12. Jeder Punktewert darf nur einmal vergeben werden. Für dein eigenes Land (${userSession.user.country || "-"}) kannst du nicht abstimmen.`;
-        document.querySelector(".vote-counter").classList.add("hidden");
-
-        for (const s of singers) {
-            const isOwn =
-                userSession.user.country &&
-                s.country &&
-                userSession.user.country.toString().toUpperCase() ===
-                    s.country.toString().toUpperCase();
-            list.appendChild(buildJuryRow(s, isOwn));
-        }
-        updateJuryValidation();
-    } else {
+    if (role !== "viewer" && role !== "jury") {
         loginRequired.classList.remove("hidden");
         header.classList.add("hidden");
         submitWrapper.classList.add("hidden");
+        return;
     }
+
+    header.classList.remove("hidden");
+    submitWrapper.classList.remove("hidden");
+
+    const ownCountry = userSession.user.country || "";
+    // Jury bekommt als country den Ländernamen ("Germany"), Viewer den Landcode ("DE")
+    const matchesOwn = role === "jury"
+        ? (s) => s.country && s.country.toString().toUpperCase() === ownCountry.toString().toUpperCase()
+        : (s) => s.landcode && s.landcode.toString().toUpperCase() === ownCountry.toString().toUpperCase();
+
+    document.getElementById("voting-title").textContent =
+        role === "jury" ? `Jury-Voting (${ownCountry})` : "Deine Stimmen verteilen";
+    document.getElementById("voting-info").textContent =
+        `Vergib alle ESC-Punkte: 1-8, 10, 12. Jeder Punktewert muss genau einmal vergeben werden. Für dein eigenes Land (${ownCountry || "-"}) kannst du nicht abstimmen.`;
+
+    for (const s of singers) {
+        list.appendChild(buildVoteRow(s, matchesOwn(s)));
+    }
+    updateVoteValidation();
 }
 
 function buildReadOnlyRow(singer) {
@@ -176,39 +160,7 @@ function buildReadOnlyRow(singer) {
     return li;
 }
 
-//Für User die Tabelle bauen
-function buildViewerRow(singer, isOwn) {
-    const li = document.createElement("li");
-    li.className = "singer-row" + (isOwn ? " disabled" : "");
-    li.innerHTML =
-        baseRowHtml(singer) +
-        `<div class="vote-controls">${
-            isOwn
-                ? '<span class="own-country">dein Land</span>'
-                : `
-                <button class="vote-btn minus" type="button" aria-label="weniger">-</button>
-                <input type="number" class="vote-input" min="0" max="20" value="0" />
-                <button class="vote-btn plus" type="button" aria-label="mehr">+</button>
-            `
-        }</div>`;
-
-    // Event listeners für die + & - Buttons und das Eingabefeld
-    if (!isOwn) {
-        const input = li.querySelector(".vote-input");
-        li.querySelector(".minus").addEventListener("click", () =>
-            changeViewerVote(singer.singer_id, -1, input),
-        );
-        li.querySelector(".plus").addEventListener("click", () =>
-            changeViewerVote(singer.singer_id, +1, input),
-        );
-        input.addEventListener("input", () =>
-            onViewerInputChange(singer.singer_id, input),
-        );
-    }
-    return li;
-}
-
-function buildJuryRow(singer, isOwn) {
+function buildVoteRow(singer, isOwn) {
     const li = document.createElement("li");
     li.className = "singer-row" + (isOwn ? " disabled" : "");
     const options = [12, 10, 8, 7, 6, 5, 4, 3, 2, 1]
@@ -219,15 +171,15 @@ function buildJuryRow(singer, isOwn) {
         `<div class="vote-controls">${
             isOwn
                 ? '<span class="own-country">dein Land</span>'
-                : `<select class="jury-select" data-singer-id="${singer.singer_id}">
+                : `<select class="vote-select" data-singer-id="${singer.singer_id}">
                 <option value="">-</option>
                 ${options}
             </select>`
         }</div>`;
     if (!isOwn) {
-        li.querySelector(".jury-select").addEventListener(
+        li.querySelector(".vote-select").addEventListener(
             "change",
-            updateJuryValidation,
+            updateVoteValidation,
         );
     }
     return li;
@@ -242,40 +194,8 @@ function baseRowHtml(singer) {
     `;
 }
 
-function changeViewerVote(singerId, delta, input) {
-    let current = parseInt(input.value, 10);
-    if (!Number.isFinite(current)) current = 0;
-    let next = current + delta;
-    if (next < 0) next = 0;
-    if (next > 20) next = 20;
-    input.value = next;
-    viewerVotes[singerId] = next;
-    updateViewerCounter();
-}
-
-function onViewerInputChange(singerId, input) {
-    let val = parseInt(input.value, 10);
-    if (!Number.isFinite(val) || val < 0) val = 0;
-    if (val > 20) val = 20;
-    input.value = val;
-    viewerVotes[singerId] = val;
-    updateViewerCounter();
-}
-
-function updateViewerCounter() {
-    let total = 0;
-    for (const v of Object.values(viewerVotes)) total += v || 0;
-    document.getElementById("vote-counter-value").textContent = total;
-
-    const counter = document.querySelector(".vote-counter");
-    counter.classList.toggle("over", total > 20);
-
-    const submitBtn = document.getElementById("submit-votes");
-    submitBtn.disabled = total !== 20;
-}
-
-function updateJuryValidation() {
-    const selects = document.querySelectorAll(".jury-select");
+function updateVoteValidation() {
+    const selects = document.querySelectorAll(".vote-select");
     const counts = {};
     let filled = 0;
 
@@ -295,8 +215,20 @@ function updateJuryValidation() {
         if (dup) hasDuplicate = true;
     });
 
-    document.getElementById("submit-votes").disabled =
-        filled === 0 || hasDuplicate;
+    // Alle 10 Punktewerte (1-8, 10, 12) müssen vergeben werden
+    const complete = filled === 10 && !hasDuplicate;
+    const submitBtn = document.getElementById("submit-votes");
+    submitBtn.disabled = !complete;
+
+    const errorEl = document.getElementById("vote-error");
+    if (!complete && filled > 0) {
+        errorEl.textContent = hasDuplicate
+            ? "Jeder Punktewert darf nur einmal vergeben werden."
+            : `Bitte alle 10 Punktewerte vergeben (${filled}/10).`;
+        errorEl.classList.remove("hidden");
+    } else {
+        errorEl.classList.add("hidden");
+    }
 }
 
 async function submitVotes() {
@@ -307,39 +239,26 @@ async function submitVotes() {
 
     if (!userSession.loggedIn || !userSession.user) return;
 
-    let endpoint;
-    let body;
+    const role = userSession.user.role;
+    if (role !== "viewer" && role !== "jury") return;
 
-    if (userSession.user.role === "viewer") {
-        endpoint = "/api/vote/viewer";
-        const votes = Object.entries(viewerVotes)
-            .filter(([, p]) => (p || 0) > 0)
-            .map(([singerId, points]) => ({
-                singerId: Number(singerId),
-                points: Number(points),
-            }));
-        body = { votes };
-    } else if (userSession.user.role === "jury") {
-        endpoint = "/api/vote/jury";
-        const votes = [];
-        document.querySelectorAll(".jury-select").forEach((s) => {
-            if (s.value !== "") {
-                votes.push({
-                    singerId: Number(s.dataset.singerId),
-                    points: Number(s.value),
-                });
-            }
-        });
-        body = { votes };
-    } else {
-        return;
-    }
+    const votes = [];
+    document.querySelectorAll(".vote-select").forEach((s) => {
+        if (s.value !== "") {
+            votes.push({
+                singerId: Number(s.dataset.singerId),
+                points: Number(s.value),
+            });
+        }
+    });
+
+    const endpoint = role === "viewer" ? "/api/vote/viewer" : "/api/vote/jury";
 
     try {
         const res = await fetch(endpoint, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(body),
+            body: JSON.stringify({ votes }),
         });
         const data = await res.json();
         if (res.ok && data.success) {
