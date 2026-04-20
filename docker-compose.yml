@@ -5,6 +5,8 @@ services:
       env_file:
         - .env
       restart: unless-stopped
+      volumes:
+        - ./model:/app/model
 
     tunnel:
       image: cloudflare/cloudflared:latest

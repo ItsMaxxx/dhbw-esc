@@ -79,35 +79,43 @@
                     <div class="admin-controls">
                         <h2>Voting-Befehle</h2>
 
-                        <div class="admin-btn-group">
-                            <button id="btn-start-voting" class="admin-btn start">
-                                Start Voting Process
-                                <span id="badge-voting" class="admin-state-badge off">gestoppt</span>
-                            </button>
-                            <p id="admin-start-info" class="admin-info"></p>
-                        </div>
+                        <div class="admin-btn-grid">
+                            <div class="admin-btn-group">
+                                <button id="btn-start-voting" class="admin-btn start">
+                                    Publish Voting
+                                    <span id="badge-voting" class="admin-state-badge off">gestoppt</span>
+                                </button>
+                                <p id="admin-start-info" class="admin-info"></p>
+                            </div>
 
-                        <div class="admin-btn-group">
-                            <button id="btn-show-results" class="admin-btn show">
-                                Publish Voting Results
-                                <span id="badge-results" class="admin-state-badge off">gesperrt</span>
-                            </button>
-                            <p id="admin-show-info" class="admin-info"></p>
-                        </div>
+                            <div class="admin-btn-group">
+                                <button id="btn-stop-voting" class="admin-btn reset">
+                                    Unpublish Voting
+                                </button>
+                                <p id="admin-stop-info" class="admin-info"></p>
+                            </div>
 
-                        <div class="admin-btn-group">
-                            <button id="btn-reset-state" class="admin-btn reset">
-                                Unpublish Voting &amp; Results
-                                <span id="badge-reset" class="admin-state-badge off">inaktiv</span>
-                            </button>
-                            <p id="admin-reset-info" class="admin-info"></p>
-                        </div>
+                            <div class="admin-btn-group">
+                                <button id="btn-show-results" class="admin-btn show">
+                                    Publish Voting Results
+                                    <span id="badge-results" class="admin-state-badge off">gesperrt</span>
+                                </button>
+                                <p id="admin-show-info" class="admin-info"></p>
+                            </div>
 
-                        <div class="admin-btn-group">
-                            <button id="btn-clear-votes" class="admin-btn danger">
-                                Delete Voting Data
-                            </button>
-                            <p id="admin-clear-info" class="admin-info"></p>
+                            <div class="admin-btn-group">
+                                <button id="btn-hide-results" class="admin-btn reset">
+                                    Unpublish Results
+                                </button>
+                                <p id="admin-hide-info" class="admin-info"></p>
+                            </div>
+
+                            <div class="admin-btn-group">
+                                <button id="btn-clear-votes" class="admin-btn danger">
+                                    Delete Voting Data
+                                </button>
+                                <p id="admin-clear-info" class="admin-info"></p>
+                            </div>
                         </div>
 
                     </div>
@@ -133,7 +141,7 @@
 
         <script src="/js/header.js"></script>
         <script src="/js/cookie.js"></script>
-        <script src="/js/auth.js"></script>
+        <script src="/js/headerSession.js"></script>
         <script src="/js/footer.js"></script>
         <script src="/js/voting.js"></script>
     </body>

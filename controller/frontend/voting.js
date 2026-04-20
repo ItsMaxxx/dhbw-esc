@@ -579,12 +579,21 @@ function initAdminTab() {
     });
 
     adminAction({
-        btnId: "btn-reset-state",
-        infoId: "admin-reset-info",
-        endpoint: "/api/admin/reset-state",
-        confirmMsg: "Voting und Ergebnisse wirklich zurücksetzen? Voting und Results-Anzeige werden gesperrt.",
-        successText: "Status wurde zurückgesetzt.",
-        onSuccess: () => { votingState.votingOpen = false; votingState.resultsVisible = false; updateAdminBadges(); },
+        btnId: "btn-stop-voting",
+        infoId: "admin-stop-info",
+        endpoint: "/api/admin/stop-voting",
+        confirmMsg: "Voting wirklich stoppen? Nutzer können dann nicht mehr abstimmen.",
+        successText: "Voting wurde gestoppt.",
+        onSuccess: () => { votingState.votingOpen = false; updateAdminBadges(); },
+    });
+
+    adminAction({
+        btnId: "btn-hide-results",
+        infoId: "admin-hide-info",
+        endpoint: "/api/admin/hide-results",
+        confirmMsg: "Ergebnisse wirklich verbergen?",
+        successText: "Ergebnisse wurden verborgen.",
+        onSuccess: () => { votingState.resultsVisible = false; updateAdminBadges(); },
     });
 }
 

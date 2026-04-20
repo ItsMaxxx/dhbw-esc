@@ -11,7 +11,7 @@ import {
   validateUserDataDB,
 } from "../../model/authModel.js";
 
-import { requireViewer } from "../middleware/auth.js";
+import { requireViewer } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 

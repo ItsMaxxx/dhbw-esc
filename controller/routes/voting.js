@@ -13,6 +13,7 @@ import {
 } from "../../model/voteModel.js";
 
 import { votingState, broadcast } from "../lib/sse.js";
+import { requireAuth, requireViewer, requireJury } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
@@ -33,11 +34,8 @@ router.get("/api/singers", async (req, res) => {
 });
 
 // API-Endpunkt: Eigener Vote-Status (Viewer: bereits vergebene Punkte, Jury: hasVoted)
-router.get("/api/vote/my-status", async (req, res) => {
-  const user = req.session && req.session.user;
-  if (!user) {
-    return res.status(401).json({ success: false, message: "Bitte einloggen." });
-  }
+router.get("/api/vote/my-status", requireAuth, async (req, res) => {
+  const user = req.session.user;
   try {
     if (user.role === "viewer") {
       if (!user.id) return res.status(400).json({ success: false, message: "Session ohne User-ID." });
@@ -56,19 +54,8 @@ router.get("/api/vote/my-status", async (req, res) => {
 });
 
 // API-Endpunkt: Viewer-Stimmen speichern
-router.post("/api/vote/viewer", async (req, res) => {
-  const user = req.session && req.session.user;
-  if (!user) {
-    return res
-      .status(401)
-      .json({ success: false, message: "Bitte einloggen." });
-  }
-  if (user.role !== "viewer") {
-    return res.status(403).json({
-      success: false,
-      message: "Nur Zuschauer dürfen hier abstimmen.",
-    });
-  }
+router.post("/api/vote/viewer", requireViewer, async (req, res) => {
+  const user = req.session.user;
   if (!votingState.votingOpen) {
     return res
       .status(403)
@@ -92,19 +79,8 @@ router.post("/api/vote/viewer", async (req, res) => {
 });
 
 // API-Endpunkt: Jury-Stimmen speichern
-router.post("/api/vote/jury", async (req, res) => {
-  const user = req.session && req.session.user;
-  if (!user) {
-    return res
-      .status(401)
-      .json({ success: false, message: "Bitte einloggen." });
-  }
-  if (user.role !== "jury") {
-    return res.status(403).json({
-      success: false,
-      message: "Nur Jury-Mitglieder dürfen hier abstimmen.",
-    });
-  }
+router.post("/api/vote/jury", requireJury, async (req, res) => {
+  const user = req.session.user;
   if (!votingState.votingOpen) {
     return res
       .status(403)

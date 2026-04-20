@@ -17,7 +17,7 @@ router.use("/assets/images", express.static(path.join(__dirname, "../../assets/i
 
 // Frontend-JS wird nicht statisch ausgeliefert, sondern über explizite Routen
 const jsFiles = [
-  "auth.js",
+  "headerSession.js",
   "cookie.js",
   "header.js",
   "footer.js",

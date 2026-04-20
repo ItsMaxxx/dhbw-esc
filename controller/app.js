@@ -7,15 +7,15 @@ dotenv.config({ override: true, debug: false, quiet: true, encoding: "utf8" });
 // debug -> Gibt bei Fehlern mehr Informationen über die geladenen .env-Variablen aus
 
 import express from "express";
-import session from "express-session";
 import { execFileSync } from "child_process";
 // execFileSync wird genutzt, um in app.listen() Fehlerinformationen auszugeben, wenn der Port nicht frei ist
 import { styleText } from "node:util";
 
 import { checkAllEnv } from "./lib/env.js";
+import sessionMiddleware from "./middleware/session.js";
 import sseRouter from "./lib/sse.js";
 import staticRouter from "./routes/static.js";
-import authRouter from "./routes/auth.js";
+import authRouter from "./routes/authRoutes.js";
 import userRouter from "./routes/user.js";
 import votingRouter from "./routes/voting.js";
 import adminRouter from "./routes/admin.js";
@@ -32,19 +32,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Session-Konfiguration - Weil DSGVO
-app.use(
-  session({
-    secret: process.env.SESSION_SECRET, // In der Praxis ein langes, zufälliges Passwort
-    resave: false, // Session wird nur neu gespeichert, wenn sich die Daten geändert haben
-    saveUninitialized: false, // WICHTIG: Erstellt erst ein Cookie, wenn man explizit Daten (Login) speichert
-    cookie: {
-      sameSite: 'strict', // Das blockiert Cookie-Mitschicken bei Cross-Site-Requests
-      httpOnly: true, // Verhindert XSS-Angriffe via JavaScript
-      secure: false, // Bei localhost auf false. Bei echtem HTTPS auf true!
-      // maxAge fehlt absichtlich: Dadurch ist es ein Session-Cookie (löscht sich beim Schließen)
-    },
-  }),
-);
+app.use(sessionMiddleware);
 
 // Router einhängen
 app.use(staticRouter);   // Statische Seiten + Assets + Frontend-JS

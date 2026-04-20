@@ -5,7 +5,8 @@
   "description": "dhbw-esc_backend_server for uni project",
   "main": "controller/app.js",
   "scripts": {
-    "start": "node --env-file=.env controller/app.js"
+    "start": "node controller/app.js",
+    "start:local": "node --env-file=.env controller/app.js"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",

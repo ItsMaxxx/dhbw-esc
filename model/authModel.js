@@ -4,6 +4,10 @@ import { styleText } from "node:util";
 
 import { getJuryUser, getViewerByEmailForLogin, createViewerUser, getViewerByToken, verifyViewerAccount, getViewerById, updateViewerUser, deleteViewerUser, getAllCountries, countryCodeExists, vorwahlExists, setResetToken, getViewerByResetToken, updatePasswordAndClearResetToken } from "./database.js";
 
+// Token-Hash: sha256 reicht (Token hat 256 Bit Entropie, kein Brute-Force-Risiko wie bei Passwörtern).
+// Deterministisch, damit der DB-Lookup `WHERE ... = ?` weiter funktioniert.
+const hashToken = (token) => crypto.createHash("sha256").update(token).digest("hex");
+
 export { getAllCountries };
 import { sendVerificationEmail, sendPasswordResetEmail } from "./mailer.js";
 
@@ -61,14 +65,14 @@ export const registerViewerUser = async (userData) => {
         // 1. Passwort sicher verschlüsseln (10 Salt-Runden)
         const hashedPassword = await bcrypt.hash(userData.password, 10);
 
-        // 2. Zufälligen 32-Byte Token für den Link generieren
+        // 2. Zufälligen 32-Byte Token für den Link generieren (Klartext geht nur per Mail raus)
         const verifyToken = crypto.randomBytes(32).toString("hex");
 
-        // 3. User speichern (mit Hash und Token)
-        const newId = await createViewerUser(userData, hashedPassword, verifyToken);
+        // 3. User speichern (nur Token-Hash in der DB)
+        const newId = await createViewerUser(userData, hashedPassword, hashToken(verifyToken));
         console.log(styleText("green", `Viewer-Account erstellt (Unverifiziert). ID: ${newId}`));
 
-        // 4. E-Mail versenden
+        // 4. E-Mail versenden (Klartext-Token)
         await sendVerificationEmail(userData.email, verifyToken, userData.firstName);
 
         return { success: true, message: "Registrierung erfolgreich. Bitte bestätige deine E-Mail-Adresse!" };
@@ -207,7 +211,8 @@ export const requestPasswordReset = async (email) => {
         const resetToken = crypto.randomBytes(32).toString("hex");
         const expiry = Date.now() + 60 * 60 * 1000; // 1 Stunde gültig
 
-        await setResetToken(email, resetToken, expiry);
+        // Nur den Hash in der DB speichern, Klartext geht per Mail raus
+        await setResetToken(email, hashToken(resetToken), expiry);
         await sendPasswordResetEmail(email, resetToken, viewer.first_name);
 
         console.log(styleText("green", `Passwort-Reset-Mail für ${email} ausgelöst.`));
@@ -232,7 +237,7 @@ export const resetPasswordWithToken = async (token, password, confirmPassword) =
             return { success: false, message: "Passwort erfüllt die Anforderungen nicht." };
         }
 
-        const row = await getViewerByResetToken(token);
+        const row = await getViewerByResetToken(hashToken(token));
         if (!row) {
             return { success: false, message: "Ungültiger oder bereits verwendeter Reset-Link." };
         }
@@ -254,7 +259,7 @@ export const resetPasswordWithToken = async (token, password, confirmPassword) =
 // Token-Verifizierungs-Logik
 export const verifyUserToken = async (token) => {
     try {
-        const user = await getViewerByToken(token);
+        const user = await getViewerByToken(hashToken(token));
         if (!user) return { success: false };
 
         await verifyViewerAccount(user.id);

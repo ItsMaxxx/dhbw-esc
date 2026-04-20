@@ -5,7 +5,7 @@ import { styleText } from "node:util";
 
 import { clearAllVotes } from "../../model/voteModel.js";
 import { votingState, broadcast } from "../lib/sse.js";
-import { requireAdmin } from "../middleware/auth.js";
+import { requireAdmin } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
@@ -25,11 +25,18 @@ router.post("/api/admin/show-results", requireAdmin, (req, res) => {
   res.status(200).json({ success: true });
 });
 
-// API-Endpunkt: Voting-Status zurücksetzen (votingOpen + resultsVisible → false)
-router.post("/api/admin/reset-state", requireAdmin, (req, res) => {
+// API-Endpunkt: Voting stoppen (votingOpen → false)
+router.post("/api/admin/stop-voting", requireAdmin, (req, res) => {
   votingState.votingOpen = false;
+  console.log(styleText("green", "Admin: Voting wurde gestoppt."));
+  broadcast("state", votingState);
+  res.status(200).json({ success: true });
+});
+
+// API-Endpunkt: Ergebnisse verbergen (resultsVisible → false)
+router.post("/api/admin/hide-results", requireAdmin, (req, res) => {
   votingState.resultsVisible = false;
-  console.log(styleText("green", "Admin: Voting-Status wurde zurückgesetzt."));
+  console.log(styleText("green", "Admin: Ergebnisse wurden verborgen."));
   broadcast("state", votingState);
   res.status(200).json({ success: true });
 });
