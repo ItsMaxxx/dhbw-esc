@@ -1,12 +1,8 @@
 import sqlite3 from "sqlite3";
 import path from "path";
-import { fileURLToPath } from "url";
 import { styleText } from "node:util";
 
-//Verzeichnispfade der E-Modules
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const dbPath = path.join(__dirname, "esc-database.db");
+const dbPath = path.resolve(process.env.DB_PATH);
 
 // Verbindung zur Datenbank herstellen
 const db = new sqlite3.Database(dbPath, sqlite3.OPEN_READWRITE, (err) => {
@@ -210,6 +206,30 @@ export const insertJuryVote = (juryCountry, singerId, points) => {
             [juryCountry, singerId, points],
             function (err) { if (err) reject(err); else resolve(this.lastID); }
         );
+    });
+};
+
+// Query: Alle Votes eines Viewers (pro Sänger aufsummiert) – für eigenen Status
+export const getViewerVotesByUser = (viewerId) => {
+    return new Promise((resolve, reject) => {
+        const query = `
+            SELECT singer_id, SUM(points) AS points
+            FROM vote_user
+            WHERE viewer_id = ?
+            GROUP BY singer_id
+        `;
+        db.all(query, [viewerId], (err, rows) => {
+            if (err) reject(err); else resolve(rows || []);
+        });
+    });
+};
+
+// Query: Hat eine Jury (für dieses Land) bereits abgestimmt?
+export const hasJuryVoted = (juryCountry) => {
+    return new Promise((resolve, reject) => {
+        db.get(`SELECT 1 AS x FROM vote_jury WHERE jury_country = ? LIMIT 1`, [juryCountry], (err, row) => {
+            if (err) reject(err); else resolve(!!row);
+        });
     });
 };
 
