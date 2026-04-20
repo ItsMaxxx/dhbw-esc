@@ -26,6 +26,7 @@ Der Server läuft dann unter `http://localhost:3000` (oder dem in `.env` gesetzt
 - [Umgebungsvariablen (.env)](#umgebungsvariablen-env)
 - [Starten der Anwendung](#starten-der-anwendung)
 - [Docker-Deployment](#docker-deployment)
+- [Cloudflare Tunnel (Production)](#cloudflare-tunnel-production)
 - [Jury- und Admin-Accounts einrichten](#jury--und-admin-accounts-einrichten)
 - [Projektstruktur](#projektstruktur)
 - [Voting-Ablauf](#voting-ablauf)
@@ -94,9 +95,11 @@ Vorlage – Datei `.env` im Projektstamm anlegen:
 
 ```env
 APP_PORT=<zu_öffnender_Port>
+BASE_URL=<öffentliche_URL_für_E-Mail-Links>
 SESSION_SECRET=<langer_zufaelliger_string_min_32_zeichen>
 GMAIL_EMAIL=<deine_gmail_adresse@gmail.com>
 GMAIL_APP_PASSWORD=<16_zeichen_google_app_passwort>
+CLOUDFLARED_TUNNEL_TOKEN=<cloudflare_tunnel_token>
 ```
 
 ### Beschreibung der Variablen
@@ -104,9 +107,11 @@ GMAIL_APP_PASSWORD=<16_zeichen_google_app_passwort>
 | Variable | Pflicht | Beschreibung |
 |----------|---------|-------------|
 | `APP_PORT` | ja | Port, auf dem der Express-Server lauscht (Standard ist `3000`) |
+| `BASE_URL` | nein | Öffentliche Basis-URL für Links in E-Mails (Verifizierung, Passwort-Reset). Fällt ohne Angabe auf `http://localhost:3000` zurück. Für Production: `https://www.dhbw-esc.de`. |
 | `SESSION_SECRET` | ja | Geheimer Schlüssel zum Signieren von Sessions. Muss ein langer, zufälliger String sein (mind. 32 Zeichen). |
 | `GMAIL_EMAIL` | ja | Gmail-Adresse, von der die Verifizierungs-E-Mails versendet werden. |
 | `GMAIL_APP_PASSWORD` | ja | 16-stelliges Google App-Passwort (kein normales Kontopasswort). |
+| `CLOUDFLARED_TUNNEL_TOKEN` | nur für Production | Token des Cloudflare-Tunnels, wird vom `tunnel`-Container in `docker-compose.yml` gelesen (siehe [Cloudflare Tunnel](#cloudflare-tunnel-production)). |
 
 ### Gmail App-Passwort erstellen
 
@@ -135,28 +140,84 @@ Beim Start prüft die Anwendung automatisch, ob alle Umgebungsvariablen gesetzt 
 
 > Wenn Node.js und npm global installiert sind, reicht `npm start` zum Ausführen der Anwendung. Andernfalls kann die App über Docker betrieben werden – einzige Voraussetzung ist dann eine laufende Docker-Installation.
 
-### Image bauen
+Das Projekt enthält `Dockerfile`, `docker-compose.yml` und `.dockerignore`. Der empfohlene Weg ist **Docker Compose**, da darüber auch der Cloudflare-Tunnel mitgestartet wird.
+
+### Mit Docker Compose (empfohlen)
+
+```bash
+# Container bauen und im Hintergrund starten
+docker compose up -d --build
+
+# Logs anschauen
+docker compose logs -f app
+docker compose logs -f tunnel
+
+# Status prüfen
+docker compose ps
+
+# Stoppen
+docker compose down
+```
+
+Nach Code-Änderungen das Image neu bauen:
+
+```bash
+docker compose up -d --build
+```
+
+Die `.env` im Projektstamm wird automatisch eingelesen – darin müssen alle Pflichtvariablen und (für Production) `CLOUDFLARED_TUNNEL_TOKEN` gesetzt sein.
+
+### Nur das App-Image ohne Compose
 
 ```bash
 docker build -t dhbw-esc .
-```
-
-### Container starten
-
-```bash
-docker run -p 3000:3000 \
-  -e APP_PORT=3000 \
-  -e SESSION_SECRET=<langer_zufaelliger_string> \
-  -e GMAIL_EMAIL=<deine_gmail@gmail.com> \
-  -e GMAIL_APP_PASSWORD=<16_zeichen_app_passwort> \
-  dhbw-esc
-```
-
-Alternativ kann eine `.env`-Datei übergeben werden:
-
-```bash
 docker run -p 3000:3000 --env-file .env dhbw-esc
 ```
+
+### Hinweise zu den Containern
+
+- Das Dockerfile basiert auf **`node:22-bookworm-slim`** und kompiliert `sqlite3` beim Build aus Source (`--build-from-source=sqlite3`). Der erste Build dauert dadurch 2–3 Minuten; nachfolgende Builds sind durch Layer-Caching deutlich schneller.
+- `.dockerignore` schließt das lokale `node_modules/` aus, damit Windows-Binaries den Linux-Container nicht brechen (ELF-/GLIBC-Fehler bei `sqlite3`).
+- Der `app`-Container bindet standardmäßig **keinen Port** nach außen, da der Zugriff über den Tunnel erfolgt. Für lokale Tests kann in `docker-compose.yml` temporär `ports: ["3000:3000"]` beim `app`-Service ergänzt werden.
+
+---
+
+## Cloudflare Tunnel (Production)
+
+Für den Produktivbetrieb wird ein [Cloudflare Tunnel](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/) verwendet. Der Tunnel-Container baut von innen eine Verbindung zu Cloudflare auf – es ist **kein Port-Forwarding und kein eigenes SSL-Zertifikat** nötig. HTTPS und DNS werden von Cloudflare übernommen.
+
+Produktionsadressen:
+
+- `https://dhbw-esc.de`
+- `https://www.dhbw-esc.de`
+
+### Einmalige Einrichtung
+
+1. In Cloudflare Zero Trust → **Networks → Tunnels** einen Tunnel anlegen (Connector-Typ: Cloudflared).
+2. Den angezeigten Token kopieren und in die `.env` als `CLOUDFLARED_TUNNEL_TOKEN` eintragen.
+3. Unter **Public Hostname** des Tunnels zwei Einträge anlegen:
+
+   | Hostname | Service |
+   |----------|---------|
+   | `dhbw-esc.de` | `http://app:3000` |
+   | `www.dhbw-esc.de` | `http://app:3000` |
+
+   `app` ist dabei der im `docker-compose.yml` definierte Container-Name – Cloudflare kommuniziert über das Docker-Netzwerk intern mit dem App-Container.
+4. Cloudflare legt den passenden CNAME im DNS automatisch an (`<tunnel-id>.cfargotunnel.com`). Existierende A-/AAAA-/CNAME-Einträge für denselben Namen müssen vorher entfernt werden.
+
+### Betrieb
+
+```bash
+docker compose up -d --build
+docker compose logs -f tunnel
+```
+
+In den Tunnel-Logs sollten vier `Registered tunnel connection`-Zeilen auftauchen – dann ist der Tunnel aktiv.
+
+### Sicherheit
+
+- Der Tunnel-Token ist ein Geheimnis und liegt ausschließlich in `.env` (nicht versioniert). Gerät er ins Log oder ein Chat, sollte der Tunnel in Cloudflare gelöscht und neu angelegt werden.
+- Sessions verwenden weiterhin `secure: false`, da Cloudflare HTTPS terminiert und intern HTTP mit dem Container spricht. Soll `secure: true` aktiviert werden, muss in `app.js` zusätzlich `app.set('trust proxy', 1)` gesetzt werden, damit Express den `X-Forwarded-Proto`-Header respektiert.
 
 ---
 
@@ -225,9 +286,11 @@ dhbw-esc/
 │   │   └── fan-favorites-2026.html
 │   └── rechtliches/             # Impressum, Datenschutz, AGB, Cookie-Richtlinie
 ├── .env                         # Umgebungsvariablen (nicht versioniert)
+├── .dockerignore                # Dateien, die nicht ins Docker-Image kopiert werden
 ├── CLAUDE.md                    # Hinweise für Claude Code
 ├── agents.md                    # Allgemeines KI-Kontext-Dokument
-├── Dockerfile                   # Docker-Konfiguration
+├── Dockerfile                   # Docker-Konfiguration (App-Container)
+├── docker-compose.yml           # Compose-Setup: App + Cloudflare-Tunnel
 └── package.json                 # Abhängigkeiten & Skripte
 ```
 
@@ -278,6 +341,7 @@ Die Gesamtpunktzahl eines Sängers setzt sich zusammen aus:
 | **Voting-Status ist flüchtig** | `votingOpen` und `resultsVisible` werden nur im Arbeitsspeicher gehalten. Ein Server-Neustart setzt den Status zurück – laufende Abstimmungen müssen danach neu gestartet werden. |
 | **Datenbank muss existieren** | Die SQLite-Datei wird beim Start nicht automatisch angelegt. Die mitgelieferte `model/esc-database.db` muss vorhanden bleiben. |
 | **Jury-Passwörter im Klartext** | Passwörter in `login_data_jury` werden nicht gehasht gespeichert – bewusste Vereinfachung für den internen Einsatz. |
+| **E-Mail-Links hängen an `BASE_URL`** | Links in Verifizierungs- und Passwort-Reset-Mails werden aus `BASE_URL` gebaut. Ist die Variable nicht gesetzt, zeigen die Links auf `http://localhost:3000` und sind für externe Empfänger nicht erreichbar. |
 
 ---
 

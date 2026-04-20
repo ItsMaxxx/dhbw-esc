@@ -1,11 +1,11 @@
 document.querySelector('.footer').innerHTML = `
     <div class="footer-content-wrapper">
         <div class="footer-section footer-logo">
-            <img
+            <a href="/"><img
                 src="/assets/images/Eurovision_Cat_Contest_Logo_New.png"
                 alt="Eurovision Cat Contest Logo"
                 class="footer-logo"
-            />
+            /></a>
         </div>
 
         <div class="footer-section legal-links">

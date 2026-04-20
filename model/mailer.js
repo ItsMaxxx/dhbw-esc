@@ -23,7 +23,8 @@ const escapeHtml = (str) =>
     .replace(/'/g, "&#39;");
 
 export const sendVerificationEmail = async (userEmail, token, firstName) => {
-  const verifyUrl = `http://localhost:3000/api/verify?token=${token}`;
+  const baseUrl = process.env.BASE_URL || "http://localhost:3000";
+  const verifyUrl = `${baseUrl}/api/verify?token=${token}`;
   const safeFirstName = escapeHtml(firstName);
 
   const mailOptions = {
@@ -61,7 +62,8 @@ export const sendVerificationEmail = async (userEmail, token, firstName) => {
 };
 
 export const sendPasswordResetEmail = async (userEmail, token, firstName) => {
-  const resetUrl = `http://localhost:3000/reset-password?token=${token}`;
+  const baseUrl = process.env.BASE_URL || "http://localhost:3000";
+  const resetUrl = `${baseUrl}/reset-password?token=${token}`;
   const safeFirstName = escapeHtml(firstName || "");
 
   const mailOptions = {

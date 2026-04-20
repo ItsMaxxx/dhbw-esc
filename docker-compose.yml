@@ -1,0 +1,17 @@
+services:
+    app:
+      build: .
+      container_name: app
+      env_file:
+        - .env
+      restart: unless-stopped
+
+    tunnel:
+      image: cloudflare/cloudflared:latest
+      container_name: tunnel
+      restart: unless-stopped
+      command: tunnel --no-autoupdate run
+      environment:
+        - TUNNEL_TOKEN=${CLOUDFLARED_TUNNEL_TOKEN}
+      depends_on:
+        - app
