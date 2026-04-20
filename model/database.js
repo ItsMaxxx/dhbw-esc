@@ -213,13 +213,17 @@ export const insertJuryVote = (juryCountry, singerId, points) => {
     });
 };
 
-// Query: Viewer-Punkte-Summen pro Sänger (alle Viewer zusammen)
-export const getViewerPointsPerSinger = () => {
+// Query: Viewer-Rohpunkte pro Herkunftsland und Sänger
+// (für anschließende Umrechnung in ESC-Punkte pro Land analog zum echten Telefonvoting)
+export const getViewerPointsPerCountryAndSinger = () => {
     return new Promise((resolve, reject) => {
         const query = `
-            SELECT singer_id, SUM(points) AS viewer_points
-            FROM vote_user
-            GROUP BY singer_id
+            SELECT u.country_code AS country_code,
+                   v.singer_id    AS singer_id,
+                   SUM(v.points)  AS points
+            FROM vote_user v
+            JOIN login_data_user u ON v.viewer_id = u.id
+            GROUP BY u.country_code, v.singer_id
         `;
         db.all(query, [], (err, rows) => {
             if (err) reject(err); else resolve(rows || []);

@@ -5,13 +5,14 @@ import {
     insertViewerVote,
     deleteJuryVotes,
     insertJuryVote,
-    getViewerPointsPerSinger,
+    getViewerPointsPerCountryAndSinger,
     getJuryPointsPerSinger,
     deleteAllVotes,
 } from "./database.js";
 
 // Klassisches ESC-Punkteschema (1-8, 10, 12, jeder Wert nur einmal)
 const ALLOWED_POINTS = new Set([1, 2, 3, 4, 5, 6, 7, 8, 10, 12]);
+const ESC_RANKS = [12, 10, 8, 7, 6, 5, 4, 3, 2, 1];
 
 // Alle Sänger inkl. Länderdaten für Voting-/Results-Tab holen
 export const fetchAllSingers = async () => {
@@ -127,17 +128,37 @@ export const clearAllVotes = async () => {
     }
 };
 
-// Finale Punkte pro Sänger: Jury- und Viewer-Punkte direkt aufsummiert
+// Finale Punkte pro Sänger:
+// - Jury-Punkte: direkte Summe aller ESC-Punkte aller Jury-Länder
+// - Viewer-Punkte: Rohstimmen werden pro Herkunftsland pro Sänger aufsummiert,
+//   dann pro Land nach Höhe sortiert und in ESC-Punkte (12/10/8/7/6/5/4/3/2/1)
+//   umgerechnet – analog zum echten ESC-Telefonvoting.
 export const calculateResults = async () => {
     try {
         const [singers, juryRows, viewerRows] = await Promise.all([
             getAllSingers(),
             getJuryPointsPerSinger(),
-            getViewerPointsPerSinger(),
+            getViewerPointsPerCountryAndSinger(),
         ]);
 
         const juryMap = new Map(juryRows.map(r => [r.singer_id, r.jury_points || 0]));
-        const viewerMap = new Map(viewerRows.map(r => [r.singer_id, r.viewer_points || 0]));
+
+        // Rohstimmen nach Herkunftsland gruppieren
+        const byCountry = new Map();
+        for (const r of viewerRows) {
+            if (!byCountry.has(r.country_code)) byCountry.set(r.country_code, []);
+            byCountry.get(r.country_code).push({ singerId: r.singer_id, points: r.points || 0 });
+        }
+
+        // Pro Herkunftsland: Sänger nach Rohpunkten sortieren und ESC-Punkte verteilen
+        const viewerMap = new Map();
+        for (const entries of byCountry.values()) {
+            entries.sort((a, b) => b.points - a.points);
+            entries.slice(0, ESC_RANKS.length).forEach((e, idx) => {
+                const curr = viewerMap.get(e.singerId) || 0;
+                viewerMap.set(e.singerId, curr + ESC_RANKS[idx]);
+            });
+        }
 
         return singers.map(s => ({
             singer_id: s.singer_id,
