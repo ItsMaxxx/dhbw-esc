@@ -29,7 +29,7 @@ const newsCards = [
     },
     {
         href: "/news/fan-favorites-2026.html",
-        img: "/assets/images/news/fan_predictions.png",
+        img: "/assets/images/news/Bild_Tommy.jpeg",
         alt: "Crowd at a Eurovision-style event with colorful lights",
         badge: "Community",
         title: "Early fan favorites and bold predictions",

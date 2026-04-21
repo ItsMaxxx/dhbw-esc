@@ -6,9 +6,12 @@ import { styleText } from "node:util";
 export function checkAllEnv() {
   const requiredEnvVars = [
     "APP_PORT",
+    "DB_PATH",
+    "BASE_URL",
     "SESSION_SECRET",
     "GMAIL_EMAIL",
     "GMAIL_APP_PASSWORD",
+    "CLOUDFLARED_TUNNEL_TOKEN"
   ];
 
   const missingEnvVars = requiredEnvVars.filter((envName) => {

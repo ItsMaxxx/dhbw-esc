@@ -4,8 +4,6 @@ import express from "express";
 import path from "path";
 import { fileURLToPath } from "url";
 
-import { logClientInfo } from "../lib/logger.js";
-
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -54,7 +52,6 @@ const staticPages = [
 ];
 for (const [route, file] of staticPages) {
   router.get(route, (req, res) => {
-    logClientInfo(req);
     res.status(200).sendFile(path.join(__dirname, `../../view/${file}`));
   });
 }
@@ -70,7 +67,6 @@ const newsSlugs = [
 ];
 newsSlugs.forEach((slug) => {
   router.get(`/news/${slug}`, (req, res) => {
-    logClientInfo(req);
     res
       .status(200)
       .sendFile(path.join(__dirname, `../../view/news/${slug}.html`));
