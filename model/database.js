@@ -1,15 +1,39 @@
 import sqlite3 from "sqlite3";
 import path from "path";
+import fs from "fs";
+import { fileURLToPath } from "url";
 import { styleText } from "node:util";
 
 const dbPath = path.resolve(process.env.DB_PATH);
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const schemaPath = path.join(__dirname, "schema.sql");
 
-// Verbindung zur Datenbank herstellen
-const db = new sqlite3.Database(dbPath, sqlite3.OPEN_READWRITE, (err) => {
+// Falls die DB-Datei fehlt: aus schema.sql neu anlegen
+const dbExisted = fs.existsSync(dbPath);
+if (!dbExisted) {
+  console.log(styleText("blue", `Keine DB unter ${dbPath} gefunden – wird aus schema.sql neu angelegt.`));
+}
+
+// Verbindung zur Datenbank herstellen (CREATE, falls noch nicht vorhanden)
+const db = new sqlite3.Database(dbPath, sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE, (err) => {
   if (err) {
     console.error(styleText("red","Fehler bei der Verbindung zur SQLite-Datenbank: " + err.message));
   } else {
-    console.log(styleText("green","Stabile SQLite-Verbindung zur existierenden esc-database.db hergestellt!"));
+    if (!dbExisted) {
+      try {
+        const schemaSql = fs.readFileSync(schemaPath, "utf8");
+        // sqlite3's Database#exec führt mehrere Statements hintereinander aus
+        const runSchema = db["exec"].bind(db);
+        runSchema(schemaSql, (initErr) => {
+          if (initErr) console.error(styleText("red", "Fehler beim Initialisieren aus schema.sql: " + initErr.message));
+          else console.log(styleText("green", "Neue SQLite-Datenbank erfolgreich aus schema.sql initialisiert."));
+        });
+      } catch (e) {
+        console.error(styleText("red", "schema.sql konnte nicht gelesen werden: " + e.message));
+      }
+    } else {
+      console.log(styleText("green","Stabile SQLite-Verbindung zur existierenden esc-database.db hergestellt!"));
+    }
     // Idempotente Migration: Spalten für Passwort-Reset anlegen, falls noch nicht vorhanden
     db.all(`PRAGMA table_info(login_data_user)`, [], (pragmaErr, columns) => {
       if (pragmaErr) {
@@ -30,6 +54,34 @@ const db = new sqlite3.Database(dbPath, sqlite3.OPEN_READWRITE, (err) => {
         });
       }
     });
+
+    // Idempotente Migration: login_data_jury.country von Ländername auf country.id (INTEGER) umstellen
+    // Admin hat keinen country-Eintrag und bekommt country = 0
+    db.all(`PRAGMA table_info(login_data_jury)`, [], (pragmaErr, columns) => {
+      if (pragmaErr) return;
+      const countryCol = columns.find(c => c.name === "country");
+      if (countryCol && countryCol.type === "TEXT") {
+        db.serialize(() => {
+          db.run(`CREATE TABLE IF NOT EXISTS login_data_jury_new (
+            country   INTEGER NOT NULL PRIMARY KEY,
+            jury_mail VARCHAR(255),
+            password  VARCHAR(255)
+          )`, (e) => { if (e) console.error(styleText("red", "Migration jury (CREATE): " + e.message)); });
+
+          db.run(`INSERT INTO login_data_jury_new (country, jury_mail, password)
+            SELECT COALESCE((SELECT id FROM country WHERE country.country = login_data_jury.country), 0),
+                   jury_mail, password
+            FROM login_data_jury`, (e) => { if (e) console.error(styleText("red", "Migration jury (INSERT): " + e.message)); });
+
+          db.run(`DROP TABLE login_data_jury`, (e) => { if (e) console.error(styleText("red", "Migration jury (DROP): " + e.message)); });
+
+          db.run(`ALTER TABLE login_data_jury_new RENAME TO login_data_jury`, (e) => {
+            if (e) console.error(styleText("red", "Migration jury (RENAME): " + e.message));
+            else console.log(styleText("green", "Migration login_data_jury.country → INTEGER abgeschlossen."));
+          });
+        });
+      }
+    });
   }
 });
 
@@ -39,7 +91,11 @@ export const getJuryUser = (email, password) => {
     return new Promise((resolve, reject) => {
         console.log(styleText("blue", `DB-Abfrage für Jury-Login gestartet: E-Mail = ${email}`));
 
-        const query = `SELECT country FROM login_data_jury WHERE jury_mail = ? AND password = ?`;
+        const query = `
+            SELECT CASE WHEN j.country = 0 THEN 'Admin' ELSE c.country END AS country
+            FROM login_data_jury j
+            LEFT JOIN country c ON c.id = j.country
+            WHERE j.jury_mail = ? AND j.password = ?`;
 
         db.get(query, [email, password], (err, row) => {
             if (err) {
@@ -275,10 +331,15 @@ export const deleteViewerUser = (id) => {
     });
 };
 
-// Query: Alle Länder mit Landcode und Vorwahl (für Dropdown-Befüllung und Validierung)
+// Query: Nur Länder die in login_data_jury vorkommen (exkl. Admin), mit Landcode und Vorwahl
 export const getAllCountries = () => {
     return new Promise((resolve, reject) => {
-        db.all(`SELECT id, landcode, country, vorwahl FROM country ORDER BY country ASC`, [], (err, rows) => {
+        db.all(`
+            SELECT c.id, c.landcode, c.country, c.vorwahl
+            FROM country c
+            INNER JOIN login_data_jury j ON j.country = c.id
+            ORDER BY c.country ASC
+        `, [], (err, rows) => {
             if (err) reject(err); else resolve(rows || []);
         });
     });

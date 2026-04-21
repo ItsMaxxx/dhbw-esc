@@ -56,7 +56,7 @@ router.get("/api/vote/my-status", requireAuth, async (req, res) => {
 // API-Endpunkt: Viewer-Stimmen speichern
 router.post("/api/vote/viewer", requireViewer, async (req, res) => {
   const user = req.session.user;
-  if (!votingState.votingOpen) {
+  if (!votingState.userVotingOpen) {
     return res
       .status(403)
       .json({ success: false, message: "Das Voting hat noch nicht begonnen!" });
@@ -81,7 +81,7 @@ router.post("/api/vote/viewer", requireViewer, async (req, res) => {
 // API-Endpunkt: Jury-Stimmen speichern
 router.post("/api/vote/jury", requireJury, async (req, res) => {
   const user = req.session.user;
-  if (!votingState.votingOpen) {
+  if (!votingState.juryVotingOpen) {
     return res
       .status(403)
       .json({ success: false, message: "Das Voting hat noch nicht begonnen!" });

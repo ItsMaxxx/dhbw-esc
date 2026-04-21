@@ -3,7 +3,7 @@
 import express from "express";
 
 // In-Memory Voting-Status (bleibt bis Server-Neustart erhalten)
-export const votingState = { votingOpen: false, resultsVisible: false };
+export const votingState = { userVotingOpen: false, juryVotingOpen: false, resultsVisible: false };
 
 // SSE-Clients: alle verbundenen Browser-Verbindungen
 const sseClients = new Set();
@@ -21,7 +21,8 @@ const router = express.Router();
 // API-Endpunkt: Voting-Status abfragen (öffentlich)
 router.get("/api/admin/state", (req, res) => {
   res.status(200).json({
-    votingOpen: votingState.votingOpen,
+    userVotingOpen: votingState.userVotingOpen,
+    juryVotingOpen: votingState.juryVotingOpen,
     resultsVisible: votingState.resultsVisible,
   });
 });

@@ -9,10 +9,34 @@ import { requireAdmin } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
-// API-Endpunkt: Voting starten
-router.post("/api/admin/start-voting", requireAdmin, (req, res) => {
-  votingState.votingOpen = true;
-  console.log(styleText("green", "Admin: Voting wurde gestartet."));
+// API-Endpunkt: User-Voting starten
+router.post("/api/admin/start-user-voting", requireAdmin, (req, res) => {
+  votingState.userVotingOpen = true;
+  console.log(styleText("green", "Admin: User-Voting wurde gestartet."));
+  broadcast("state", votingState);
+  res.status(200).json({ success: true });
+});
+
+// API-Endpunkt: User-Voting stoppen
+router.post("/api/admin/stop-user-voting", requireAdmin, (req, res) => {
+  votingState.userVotingOpen = false;
+  console.log(styleText("green", "Admin: User-Voting wurde gestoppt."));
+  broadcast("state", votingState);
+  res.status(200).json({ success: true });
+});
+
+// API-Endpunkt: Jury-Voting starten
+router.post("/api/admin/start-jury-voting", requireAdmin, (req, res) => {
+  votingState.juryVotingOpen = true;
+  console.log(styleText("green", "Admin: Jury-Voting wurde gestartet."));
+  broadcast("state", votingState);
+  res.status(200).json({ success: true });
+});
+
+// API-Endpunkt: Jury-Voting stoppen
+router.post("/api/admin/stop-jury-voting", requireAdmin, (req, res) => {
+  votingState.juryVotingOpen = false;
+  console.log(styleText("green", "Admin: Jury-Voting wurde gestoppt."));
   broadcast("state", votingState);
   res.status(200).json({ success: true });
 });
@@ -21,14 +45,6 @@ router.post("/api/admin/start-voting", requireAdmin, (req, res) => {
 router.post("/api/admin/show-results", requireAdmin, (req, res) => {
   votingState.resultsVisible = true;
   console.log(styleText("green", "Admin: Ergebnisse wurden freigegeben."));
-  broadcast("state", votingState);
-  res.status(200).json({ success: true });
-});
-
-// API-Endpunkt: Voting stoppen (votingOpen → false)
-router.post("/api/admin/stop-voting", requireAdmin, (req, res) => {
-  votingState.votingOpen = false;
-  console.log(styleText("green", "Admin: Voting wurde gestoppt."));
   broadcast("state", votingState);
   res.status(200).json({ success: true });
 });

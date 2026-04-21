@@ -4,7 +4,7 @@
 
 let userSession = { loggedIn: false };
 let singers = [];
-let votingState = { votingOpen: false, resultsVisible: false };
+let votingState = { userVotingOpen: false, juryVotingOpen: false, resultsVisible: false };
 let currentTab = "voting";
 
 // Viewer: bereits in der DB vergebene Punkte (fix) vs. jetzt neu hinzugefügte (editierbar)
@@ -146,7 +146,7 @@ function renderVotingTab() {
     if (role === "admin") {
         header.classList.add("hidden");
         submitWrapper.classList.add("hidden");
-        if (votingState.votingOpen) {
+        if (votingState.userVotingOpen || votingState.juryVotingOpen) {
             const li = document.createElement("li");
             li.className = "info-msg";
             li.textContent = "Als Admin kannst du nicht abstimmen.";
@@ -156,8 +156,9 @@ function renderVotingTab() {
         return;
     }
 
-    // Voting noch nicht gestartet
-    if (!votingState.votingOpen) {
+    // Voting noch nicht gestartet (rollenspezifisch prüfen)
+    const isVotingOpen = role === "jury" ? votingState.juryVotingOpen : votingState.userVotingOpen;
+    if (!isVotingOpen) {
         header.classList.add("hidden");
         submitWrapper.classList.add("hidden");
         const li = document.createElement("li");
@@ -555,11 +556,37 @@ function initAdminTab() {
     updateAdminBadges();
 
     adminAction({
-        btnId: "btn-start-voting",
-        infoId: "admin-start-info",
-        endpoint: "/api/admin/start-voting",
-        successText: "Voting wurde gestartet!",
-        onSuccess: () => { votingState.votingOpen = true; updateAdminBadges(); },
+        btnId: "btn-start-user-voting",
+        infoId: "admin-start-user-info",
+        endpoint: "/api/admin/start-user-voting",
+        successText: "User-Voting wurde gestartet!",
+        onSuccess: () => { votingState.userVotingOpen = true; updateAdminBadges(); },
+    });
+
+    adminAction({
+        btnId: "btn-stop-user-voting",
+        infoId: "admin-stop-user-info",
+        endpoint: "/api/admin/stop-user-voting",
+        confirmMsg: "User-Voting wirklich stoppen?",
+        successText: "User-Voting wurde gestoppt.",
+        onSuccess: () => { votingState.userVotingOpen = false; updateAdminBadges(); },
+    });
+
+    adminAction({
+        btnId: "btn-start-jury-voting",
+        infoId: "admin-start-jury-info",
+        endpoint: "/api/admin/start-jury-voting",
+        successText: "Jury-Voting wurde gestartet!",
+        onSuccess: () => { votingState.juryVotingOpen = true; updateAdminBadges(); },
+    });
+
+    adminAction({
+        btnId: "btn-stop-jury-voting",
+        infoId: "admin-stop-jury-info",
+        endpoint: "/api/admin/stop-jury-voting",
+        confirmMsg: "Jury-Voting wirklich stoppen?",
+        successText: "Jury-Voting wurde gestoppt.",
+        onSuccess: () => { votingState.juryVotingOpen = false; updateAdminBadges(); },
     });
 
     adminAction({
@@ -579,15 +606,6 @@ function initAdminTab() {
     });
 
     adminAction({
-        btnId: "btn-stop-voting",
-        infoId: "admin-stop-info",
-        endpoint: "/api/admin/stop-voting",
-        confirmMsg: "Voting wirklich stoppen? Nutzer können dann nicht mehr abstimmen.",
-        successText: "Voting wurde gestoppt.",
-        onSuccess: () => { votingState.votingOpen = false; updateAdminBadges(); },
-    });
-
-    adminAction({
         btnId: "btn-hide-results",
         infoId: "admin-hide-info",
         endpoint: "/api/admin/hide-results",
@@ -598,11 +616,16 @@ function initAdminTab() {
 }
 
 function updateAdminBadges() {
-    const badgeVoting = document.getElementById("badge-voting");
+    const badgeUserVoting = document.getElementById("badge-user-voting");
+    const badgeJuryVoting = document.getElementById("badge-jury-voting");
     const badgeResults = document.getElementById("badge-results");
-    if (badgeVoting) {
-        badgeVoting.textContent = votingState.votingOpen ? "läuft" : "gestoppt";
-        badgeVoting.className = "admin-state-badge " + (votingState.votingOpen ? "on" : "off");
+    if (badgeUserVoting) {
+        badgeUserVoting.textContent = votingState.userVotingOpen ? "läuft" : "gestoppt";
+        badgeUserVoting.className = "admin-state-badge " + (votingState.userVotingOpen ? "on" : "off");
+    }
+    if (badgeJuryVoting) {
+        badgeJuryVoting.textContent = votingState.juryVotingOpen ? "läuft" : "gestoppt";
+        badgeJuryVoting.className = "admin-state-badge " + (votingState.juryVotingOpen ? "on" : "off");
     }
     if (badgeResults) {
         badgeResults.textContent = votingState.resultsVisible ? "sichtbar" : "gesperrt";
