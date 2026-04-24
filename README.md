@@ -1,6 +1,6 @@
 # DHBW Eurovision Cat Contest – Voting Portal
 
-Abstimmungsportal für den DHBW-internen Eurovision Cat Contest (ESC-Parodie). Viewer registrieren sich selbst, Jury-Mitglieder haben einen festen Login, ein Admin steuert den Ablauf in Echtzeit. Viewer und Jury stimmen nach demselben klassischen ESC-Schema ab (1-8, 10, 12 Punkte).
+Abstimmungsportal für den DHBW-internen Eurovision Cat Contest (ESC-Parodie). Viewer registrieren sich selbst, Jury-Mitglieder haben einen festen Login, ein Admin steuert den Ablauf in Echtzeit. Viewer verteilen ihre 10 Stimmen & die Jury stimmt nach dem klassischen ESC-Schema ab (1-8, 10, 12 Punkte).
 
 ---
 
